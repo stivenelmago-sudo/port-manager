@@ -1,11 +1,13 @@
 {
-  "name": "port-manager",
-  "displayName": "Port Manager",
-  "description": "View listening ports, check availability, and kill processes — all inside VS Code. Works on macOS, Windows, and Linux.",
-  "version": "1.0.0",
-  "publisher": "saiki",
+  "name": "portpilot",
+  "displayName": "%ext.displayName%",
+  "description": "%ext.description%",
+  "version": "1.1.0",
+  "publisher": "port-manager-saiki",
   "author": {
-    "name": "saiki"
+    "name": "Cristopher Martinez",
+    "email": "cristopher-dev@users.noreply.github.com",
+    "url": "https://github.com/cristopher-dev"
   },
   "license": "MIT",
   "icon": "images/icon.png",
@@ -15,14 +17,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/saiki/vscode-port-manager"
+    "url": "https://github.com/cristopher-dev/port-manager"
   },
   "bugs": {
-    "url": "https://github.com/saiki/vscode-port-manager/issues"
+    "url": "https://github.com/cristopher-dev/port-manager/issues"
   },
-  "homepage": "https://github.com/saiki/vscode-port-manager#readme",
+  "homepage": "https://github.com/cristopher-dev/port-manager#readme",
   "engines": {
-    "vscode": "^1.80.0"
+    "vscode": "^1.101.0"
   },
   "categories": [
     "Other"
@@ -35,32 +37,100 @@
     "tcp",
     "server",
     "debug",
-    "devtools"
+    "devtools",
+    "i18n"
   ],
   "activationEvents": [],
-  "main": "./extension.js",
+  "main": "./src/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "PortPilot",
+      "properties": {
+        "portManager.language": {
+          "type": "string",
+          "enum": [
+            "en",
+            "es",
+            "zh",
+            "hi",
+            "ar",
+            "ja"
+          ],
+          "default": "",
+          "description": "%config.language.description%",
+          "enumDescriptions": [
+            "English",
+            "Español",
+            "Chinese",
+            "हिन्दी",
+            "العربية",
+            "日本語"
+          ]
+        },
+        "portManager.witr.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.witr.enabled.description%"
+        },
+        "portManager.witr.binaryPath": {
+          "type": "string",
+          "default": "",
+          "description": "%config.witr.binaryPath.description%"
+        },
+        "portManager.mcp.autoconfig": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.mcp.autoconfig.description%"
+        },
+        "portManager.mcp.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.mcp.enabled.description%"
+        },
+        "portManager.mcp.disabledTools": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "%config.mcp.disabledTools.description%"
+        }
+      }
+    },
+    "mcpServerDefinitionProviders": [
+      {
+        "id": "portpilot.mcp-servers",
+        "label": "%mcp.providerLabel%"
+      }
+    ],
     "commands": [
       {
         "command": "portManager.show",
-        "title": "Port Manager: Show Listening Ports",
+        "title": "%cmd.show%",
         "icon": "$(list-unordered)"
       },
       {
         "command": "portManager.checkPort",
-        "title": "Port Manager: Check Port Availability"
+        "title": "%cmd.checkPort%"
       },
       {
         "command": "portManager.killPort",
-        "title": "Port Manager: Kill Port"
+        "title": "%cmd.killPort%"
+      },
+      {
+        "command": "portManager.setLanguage",
+        "title": "%cmd.setLanguage%"
+      },
+      {
+        "command": "portManager.showAncestry",
+        "title": "%cmd.showAncestry%",
+        "icon": "$(debug-disconnect)"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
           "id": "portManager",
-          "title": "Port Manager",
-          "icon": "$(plug)"
+          "title": "%ext.displayName%",
+          "icon": "$(radio-tower)"
         }
       ]
     },
@@ -69,15 +139,28 @@
         {
           "type": "webview",
           "id": "portManager.panel",
-          "name": "Ports"
+          "name": "%view.title%"
         }
       ]
     },
     "menus": {
       "commandPalette": [
-        { "command": "portManager.show" },
-        { "command": "portManager.checkPort" },
-        { "command": "portManager.killPort" }
+        {
+          "command": "portManager.show"
+        },
+        {
+          "command": "portManager.checkPort"
+        },
+        {
+          "command": "portManager.killPort"
+        },
+        {
+          "command": "portManager.setLanguage"
+        },
+        {
+          "command": "portManager.showAncestry",
+          "when": "false"
+        }
       ]
     },
     "keybindings": [
@@ -89,11 +172,24 @@
     ]
   },
   "devDependencies": {
-    "@vscode/vsce": "^2.22.0",
-    "@types/vscode": "^1.80.0"
+    "@types/vscode": "^1.80.0",
+    "@vscode/vsce": "^2.22.0"
   },
   "scripts": {
+    "lint": "node --check src/extension.js && for f in $(find src -name '*.js' -type f); do node --check \"$f\"; done && for f in $(find mcp-server -name '*.js' -type f); do node --check \"$f\"; done",
+    "validate": "node scripts/validate.js",
+    "test": "node scripts/smoke-test.js && node scripts/activation-test.js && node scripts/nls-resolution-test.js && node scripts/witr-smoke-test.js && node scripts/witr-functional-test.js && node scripts/containers-locks-test.js && node scripts/mcp-smoke-test.js && node scripts/autoconfig-test.js",
+    "postinstall": "node scripts/postinstall.js",
+    "manual-install": "node scripts/manual-install-test.js",
+    "build": "npm run lint && npm run validate && npm test && vsce package --no-dependencies",
     "package": "vsce package",
-    "publish": "vsce publish"
+    "publish": "vsce publish",
+    "mcp": "node mcp-server/index.js"
+  },
+  "bin": {
+    "portpilot-mcp": "mcp-server/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0"
   }
 }

@@ -1,0 +1,457 @@
+/**
+ * PortPilot - Webview Provider
+ */
+
+const vscode = require("vscode");
+const { getWebviewContent } = require("../webview");
+const {
+  getListeningPorts, getListeningPortsEnriched,
+  killByPid, killGraceful,
+  terminateByPid, pauseByPid, resumeByPid, renice,
+} = require("../core/portService");
+const { listContainers, inspectContainer, runtimeAction } = require("../core/containerService");
+const { listLocks, listInterestingFds } = require("../core/lockService");
+const { MESSAGE_TYPE, COMMAND } = require("../core/constants");
+const { probe } = require("../witr");
+const i18n = require("../i18n");
+const autoConfig = require("../mcp/autoConfig");
+
+function createWebviewProvider(ctx) {
+  const witrAvailability = ctx ? probe(ctx) : { status: "skipped", hint: "no context" };
+
+  return {
+    resolveWebviewView(webviewView) {
+      webviewView.webview.options = { enableScripts: true };
+      webviewView.webview.html = getWebviewContent(i18n.getWebviewStrings());
+
+      webviewView.webview.onDidReceiveMessage((msg) => {
+        handleMessage(msg, webviewView.webview, witrAvailability);
+      });
+    },
+  };
+}
+
+async function handleMessage(msg, webview, witrAvailability) {
+  switch (msg.command) {
+    case COMMAND.REFRESH:
+      await handleRefresh(webview, witrAvailability);
+      break;
+    case COMMAND.REFRESH_PROCESSES:
+      await handleRefreshProcesses(webview, witrAvailability);
+      break;
+    case COMMAND.REFRESH_CONTAINERS:
+      await handleRefreshContainers(webview);
+      break;
+    case COMMAND.REFRESH_LOCKS:
+      await handleRefreshLocks(webview);
+      break;
+    case COMMAND.GET_PROCESS_DETAILS:
+      await handleProcessDetails(webview, msg.pid, witrAvailability);
+      break;
+    case COMMAND.GET_CONTAINER_DETAILS:
+      await handleContainerDetails(webview, msg.runtime, msg.id);
+      break;
+    case COMMAND.CONTAINER_ACTION:
+      await handleContainerAction(webview, msg.runtime, msg.id, msg.action);
+      break;
+    case COMMAND.PROCESS_ACTION:
+      await handleProcessAction(webview, msg.pid, msg.action, msg.nice);
+      break;
+    case COMMAND.KILL:
+      await handleKill(msg, webview);
+      break;
+    case COMMAND.BULK_KILL:
+      await handleBulkKill(msg, webview);
+      break;
+    case COMMAND.SET_LANGUAGE:
+      handleSetLanguage(msg.lang);
+      break;
+    case COMMAND.OPEN_EXTERNAL:
+      handleOpenExternal(msg.uri);
+      break;
+    case COMMAND.MCP_LIST:
+      sendMcpState(webview);
+      break;
+    case COMMAND.MCP_TOGGLE_ENABLED:
+      handleMcpToggleEnabled(webview, msg.enabled);
+      break;
+    case COMMAND.MCP_TOGGLE_TOOL:
+      handleMcpToggleTool(webview, msg.tool, msg.enabled);
+      break;
+  }
+}
+
+async function handleRefresh(webview, witrAvailability) {
+  let payload;
+  if (witrAvailability && witrAvailability.status === "available" && witrAvailability.binaryPath) {
+    try {
+      const { ports, availability } = await getListeningPortsEnriched({
+        witrBin: witrAvailability.binaryPath,
+      });
+      payload = {
+        type: MESSAGE_TYPE.PORTS,
+        ports,
+        witr: { status: availability.status, enriched: availability.enriched || 0 },
+      };
+    } catch {
+      payload = { type: MESSAGE_TYPE.PORTS, ports: getListeningPorts() };
+    }
+  } else {
+    payload = {
+      type: MESSAGE_TYPE.PORTS,
+      ports: getListeningPorts(),
+      witr: { status: witrAvailability.status, hint: witrAvailability.hint },
+    };
+  }
+  webview.postMessage(payload);
+}
+
+async function handleRefreshProcesses(webview, witrAvailability) {
+  // WITR (the bundled v0.3.3 binary) has no "list all processes" mode — invoking
+  // it with no target opens an interactive TUI instead of emitting JSON. So
+  // derive the Processes tab rows from listening ports, enriched with witr
+  // ancestry data when available. cpu/memory/command stay blank unless a
+  // future WITR release (or another tool) provides them.
+  let ports = [];
+  let witrStatus = witrAvailability ? witrAvailability.status : "skipped";
+  let witrHint = witrAvailability ? witrAvailability.hint : undefined;
+  try {
+    if (witrAvailability && witrAvailability.status === "available" && witrAvailability.binaryPath) {
+      const { ports: enriched, availability } = await getListeningPortsEnriched({
+        witrBin: witrAvailability.binaryPath,
+      });
+      ports = enriched;
+      // Propagate witr's own status/hint so the webview can show the real
+      // reason if enrichment failed (permission denied, binary error, etc.)
+      // instead of silently masking it behind plain listening-port data.
+      if (availability && availability.status && availability.status !== "available") {
+        witrStatus = availability.status;
+        witrHint = availability.hint || witrHint;
+      }
+    } else {
+      ports = getListeningPorts();
+    }
+  } catch (e) {
+    ports = getListeningPorts();
+    witrStatus = "error";
+    witrHint = e && e.message ? e.message : witrHint;
+  }
+
+  // Deduplicate by pid — one process can hold several ports. Keep the first
+  // port for reference so the user still sees which port(s) the process owns.
+  const byPid = new Map();
+  for (const p of ports) {
+    if (!p || !p.pid) continue;
+    if (!byPid.has(p.pid)) {
+      byPid.set(p.pid, {
+        pid: p.pid,
+        name: p.process || "?",
+        port: p.port,
+        ancestry: p.witr && p.witr.chain ? p.witr.chain : "",
+        source: p.witr && p.witr.leafName ? p.witr.leafName : "",
+        command: "",
+        cpu: 0,
+        memory: 0,
+      });
+    }
+  }
+
+  const witrMsg = { status: witrStatus };
+  if (witrHint) witrMsg.hint = witrHint;
+  webview.postMessage({
+    type: "processes",
+    processes: Array.from(byPid.values()),
+    witr: witrMsg,
+  });
+}
+
+async function handleProcessDetails(webview, pid, witrAvailability) {
+  if (!pid) return;
+  if (!witrAvailability || witrAvailability.status !== "available" || !witrAvailability.binaryPath) {
+    webview.postMessage({ type: "processDetails", pid, error: witrAvailability.hint || "witr unavailable" });
+    return;
+  }
+  try {
+    const { runner } = require("../witr");
+    const raw = await runner.getProcessDetails(witrAvailability.binaryPath, pid);
+    if (!raw) {
+      webview.postMessage({ type: "processDetails", pid, error: "no data" });
+      return;
+    }
+    const p = raw.Process || {};
+    // Normalize WITR's PascalCase + nested shapes into the simple camelCase
+    // contract the webview expects, so the renderers never receive a raw
+    // object/array and have to stringify it (which produces "[object Object]").
+    const ancestry = (raw.Ancestry || []).map((node) => ({
+      name: (node && (node.Command || node.name)) || "?",
+      pid: (node && (node.PID ?? node.pid)) ?? null,
+    }));
+    const source = raw.Source && typeof raw.Source === "object"
+      ? (raw.Source.Description || raw.Source.Name || raw.Source.Type || "")
+      : (raw.Source || "");
+    const sockets = (raw.SocketInfo || []).map((s) => ({
+      address: s && (s.Address || s.address || s.bind || ""),
+      port: s && (s.Port ?? s.port),
+      state: s && (s.State || s.state || ""),
+      protocol: s && (s.Protocol || s.protocol || ""),
+    }));
+    const environment = (raw.FileContext && raw.FileContext.environment)
+      || raw.Environment
+      || {};
+    const data = {
+      pid: p.PID,
+      ppid: p.PPID,
+      name: raw.ResolvedTarget || p.Command,
+      command: p.Cmdline || p.Command,
+      user: p.User,
+      cwd: p.WorkingDir,
+      started: p.StartedAt,
+      cpu: p.CPUPercent,
+      memory: p.MemoryRSS,
+      gitRepo: p.GitRepo,
+      gitBranch: p.GitBranch,
+      container: p.Container,
+      service: p.Service,
+      ancestry,
+      source,
+      sockets,
+      warnings: raw.Warnings || [],
+      environment,
+    };
+    webview.postMessage({ type: "processDetails", pid, data });
+  } catch (e) {
+    webview.postMessage({ type: "processDetails", pid, error: e.message });
+  }
+}
+
+async function handleRefreshContainers(webview) {
+  try {
+    const { containers, runtimes } = await listContainers();
+    webview.postMessage({ type: "containers", containers, runtimes });
+  } catch (e) {
+    webview.postMessage({ type: "containers", containers: [], runtimes: [], error: e.message });
+  }
+}
+
+async function handleRefreshLocks(webview) {
+  try {
+    const locks = await listLocks();
+    webview.postMessage({ type: "locks", locks });
+  } catch (e) {
+    webview.postMessage({ type: "locks", locks: [], error: e.message });
+  }
+}
+
+async function handleContainerDetails(webview, runtime, id) {
+  try {
+    const data = await inspectContainer(runtime, id);
+    webview.postMessage({ type: "containerDetails", runtime, id, data });
+  } catch (e) {
+    webview.postMessage({ type: "containerDetails", runtime, id, error: e.message });
+  }
+}
+
+async function handleContainerAction(webview, runtime, id, action) {
+  try {
+    let payload = null;
+    if (action === "logs" || action === "inspect") {
+      payload = await runtimeAction(runtime, id, action);
+      webview.postMessage({ type: "containerOutput", runtime, id, action, output: payload || "" });
+    } else {
+      await runtimeAction(runtime, id, action);
+      vscode.window.showInformationMessage(`Container ${action}: ${id}`);
+      // Refresh the container list.
+      const { containers, runtimes } = await listContainers();
+      webview.postMessage({ type: "containers", containers, runtimes });
+    }
+  } catch (e) {
+    vscode.window.showErrorMessage(`Container ${action} failed: ${e.message}`);
+  }
+}
+
+async function handleProcessAction(webview, pid, action, nice) {
+  try {
+    let result;
+    switch (action) {
+      case "terminate": result = terminateByPid(pid); break;
+      case "pause":    result = pauseByPid(pid); break;
+      case "resume":   result = resumeByPid(pid); break;
+      case "renice":   result = renice(pid, nice); break;
+      default: throw new Error(`Unknown process action: ${action}`);
+    }
+    webview.postMessage({ type: "processActionResult", pid, action, ok: true, result });
+  } catch (e) {
+    webview.postMessage({ type: "processActionResult", pid, action, ok: false, error: e.message });
+  }
+}
+
+async function handleKill(msg, webview) {
+  try {
+    const result = await killGraceful(msg.pid);
+    webview.postMessage({
+      type: MESSAGE_TYPE.KILLED,
+      port: msg.port,
+      signal: result.signal,
+      escalated: result.escalated,
+    });
+  } catch (e) {
+    webview.postMessage({
+      type: MESSAGE_TYPE.KILL_ERROR,
+      error: e.message,
+    });
+  }
+}
+
+async function handleBulkKill(msg, webview) {
+  let killed = 0;
+  let escalated = 0;
+  const errors = [];
+
+  // 1) Port-targeted kills: resolve each port to its owning PID via the
+  //    current snapshot of listening ports. Skip ports that no longer have
+  //    an owner (process exited, port re-used, etc.).
+  if (Array.isArray(msg.ports) && msg.ports.length > 0) {
+    const livePorts = getListeningPorts();
+    for (const targetPort of msg.ports) {
+      const found = livePorts.find((p) => p.port === targetPort);
+      if (!found || !found.pid) continue;
+      try {
+        const result = await killGraceful(found.pid);
+        killed++;
+        if (result && result.escalated) escalated++;
+      } catch (e) {
+        errors.push(`:${targetPort} — ${e.message}`);
+      }
+    }
+  }
+
+  // 2) PID-targeted kills (Processes tab). Useful for processes we cannot
+  //    resolve through the listening-ports view (e.g. background daemons).
+  if (Array.isArray(msg.pids) && msg.pids.length > 0) {
+    for (const targetPid of msg.pids) {
+      try {
+        const result = await killGraceful(targetPid);
+        killed++;
+        if (result && result.escalated) escalated++;
+      } catch (e) {
+        errors.push(`pid ${targetPid} — ${e.message}`);
+      }
+    }
+  }
+
+  webview.postMessage({
+    type: MESSAGE_TYPE.KILLED,
+    port: i18n.tr("webview.bulkKilledLabel", killed) + (escalated ? ` (${escalated} escalated)` : ""),
+  });
+  if (errors.length > 0) {
+    webview.postMessage({
+      type: MESSAGE_TYPE.KILL_ERROR,
+      error: errors.join("; "),
+    });
+  }
+}
+
+async function handleSetLanguage(lang) {
+  if (!lang || !i18n.SUPPORTED.includes(lang)) return;
+  try {
+    await vscode.workspace
+      .getConfiguration()
+      .update("portManager.language", lang, vscode.ConfigurationTarget.Global);
+  } catch {
+    // ignore
+  }
+  i18n.setLanguage(lang);
+  await vscode.commands.executeCommand("workbench.action.reloadWindow");
+}
+
+function handleOpenExternal(uri) {
+  // Sanitize: only allow http(s) URLs to prevent misuse as a generic opener.
+  if (typeof uri !== "string") return;
+  const trimmed = uri.trim();
+  if (!/^https?:\/\//i.test(trimmed)) return;
+  vscode.env.openExternal(vscode.Uri.parse(trimmed));
+}
+
+// ─── MCP server configuration panel ─────────────────────────────────────────
+
+/**
+ * Tools the MCP server exposes. The webview renders these as toggles; the
+ * authoritative list lives here so we don't depend on the spawned server to
+ * introspect itself. Keep in sync with `mcp-server/index.js` and
+ * `mcp-server/commands/system.js`.
+ */
+const MCP_TOOLS = [
+  { name: "list_listening_ports",   category: "read",   destructive: false },
+  { name: "check_port",             category: "read",   destructive: false },
+  { name: "find_ports_by_process",  category: "read",   destructive: false },
+  { name: "get_port_info",          category: "read",   destructive: false },
+  { name: "find_free_port",         category: "read",   destructive: false },
+  { name: "list_connections",       category: "read",   destructive: false },
+  { name: "get_process_info",       category: "read",   destructive: false },
+  { name: "find_processes_by_name", category: "read",   destructive: false },
+  { name: "list_docker_containers", category: "system", destructive: false },
+  { name: "list_locks",             category: "system", destructive: false },
+  { name: "get_network_interfaces", category: "system", destructive: false },
+  { name: "get_system_info",        category: "system", destructive: false },
+  { name: "witr_availability",      category: "system", destructive: false },
+  { name: "kill_port",              category: "write",  destructive: true },
+  { name: "kill_pid",               category: "write",  destructive: true },
+  { name: "kill_by_name",           category: "write",  destructive: true },
+];
+
+function readMcpSettings() {
+  const cfg = vscode.workspace.getConfiguration("portManager.mcp");
+  const disabled = cfg.get("disabledTools", []) || [];
+  return {
+    enabled: cfg.get("enabled", true) !== false,
+    disabledTools: Array.isArray(disabled) ? disabled.slice() : [],
+  };
+}
+
+async function persistMcpSettings(patch) {
+  const cfg = vscode.workspace.getConfiguration("portManager.mcp");
+  if (patch && Object.prototype.hasOwnProperty.call(patch, "enabled")) {
+    await cfg.update("enabled", !!patch.enabled, vscode.ConfigurationTarget.Global);
+  }
+  if (patch && Object.prototype.hasOwnProperty.call(patch, "disabledTools")) {
+    await cfg.update("disabledTools", patch.disabledTools.slice(), vscode.ConfigurationTarget.Global);
+  }
+  // Push to runtime config so the spawned MCP server picks it up immediately.
+  try {
+    autoConfig.syncMcpConfig({
+      enabled: patch.enabled !== undefined ? !!patch.enabled : readMcpSettings().enabled,
+      disabledTools: patch.disabledTools !== undefined ? patch.disabledTools : readMcpSettings().disabledTools,
+      version: require("../../package.json").version,
+    });
+  } catch (e) {
+    console.warn(`[portpilot] syncMcpConfig failed: ${e.message}`);
+  }
+}
+
+function sendMcpState(webview) {
+  const s = readMcpSettings();
+  webview.postMessage({
+    type: "mcpState",
+    enabled: s.enabled,
+    disabledTools: s.disabledTools,
+    tools: MCP_TOOLS,
+    autoconfig: vscode.workspace.getConfiguration("portManager.mcp").get("autoconfig", true) !== false,
+    configPath: autoConfig.mcpConfigPath(),
+    version: require("../../package.json").version,
+  });
+}
+
+async function handleMcpToggleEnabled(webview, enabled) {
+  await persistMcpSettings({ ...readMcpSettings(), enabled: !!enabled });
+  sendMcpState(webview);
+}
+
+async function handleMcpToggleTool(webview, tool, enabled) {
+  const s = readMcpSettings();
+  const next = new Set(s.disabledTools);
+  if (enabled) next.delete(tool); else next.add(tool);
+  await persistMcpSettings({ ...s, disabledTools: [...next] });
+  sendMcpState(webview);
+}
+
+module.exports = { createWebviewProvider };

@@ -1,0 +1,22 @@
+{
+  "ext.displayName": "PortPilot",
+  "ext.description": "عرض المنافذ المستمعة والتحقق من توفرها وإنهاء العمليات — كل ذلك داخل VS Code. يعمل على macOS وWindows وLinux.",
+  "view.title": "المنافذ",
+  "cmd.show": "PortPilot: عرض المنافذ المستمعة",
+  "cmd.checkPort": "PortPilot: التحقق من توفر المنفذ",
+  "cmd.killPort": "PortPilot: إغلاق المنفذ",
+  "cmd.setLanguage": "PortPilot: تعيين اللغة",
+  "cmd.showAncestry": "PortPilot: عرض سلسلة العملية",
+  "config.language.description": "تجاوز لغة الواجهة (تلقائي = اتباع لغة عرض VS Code)",
+  "config.witr.enabled.description": "تفعيل إثراء سلسلة العملية عبر WITR (الملف الثنائي مضمن)",
+  "config.witr.binaryPath.description": "مسار ملف witr الثنائي (فارغ = استخدام المضمن)",
+  "config.mcp.autoconfig.description": "تسجيل خادم PortPilot MCP تلقائيًا في VS Code والعملاء الآخرين عند التفعيل",
+  "config.mcp.enabled.description": "تمكين خادم PortPilot MCP",
+  "config.mcp.disabledTools.description": "قائمة أسماء أدوات MCP لتعطيلها",
+  "mcp.providerLabel": "PortPilot",
+  "config.mcp.enabled.description": "المفتاح الرئيسي لخادم PortPilot MCP. عند إيقافه، لا يتم عرض أي أدوات للعملاء (VS Code, Cursor, Copilot, إلخ).",
+  "config.mcp.disabledTools.description": "قائمة بأسماء أدوات MCP لإخفائها عن العملاء. استخدم علامة التبويب \"Tools\" في الشريط الجانبي لتبديل الأدوات الفردية.",
+  "setLanguage.prompt": "اختر اللغة",
+  "setLanguage.current": "الحالي",
+  "setLanguage.changed": "اللغة: {0} (أعد تحميل النافذة)"
+}

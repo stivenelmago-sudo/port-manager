@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "portpilot": {
+      "command": "/root/.nvm/versions/node/v24.19.0/bin/node",
+      "args": [
+        "/root/project/port-manager/mcp-server/index.js"
+      ],
+      "env": {}
+    }
+  }
+}

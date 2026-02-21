@@ -1,0 +1,13 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "mcp": {
+    "portpilot": {
+      "type": "local",
+      "command": [
+        "node",
+        "/root/project/port-manager/mcp-server/index.js"
+      ],
+      "enabled": true
+    }
+  }
+}

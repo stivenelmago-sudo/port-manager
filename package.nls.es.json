@@ -1,0 +1,22 @@
+{
+  "ext.displayName": "PortPilot",
+  "ext.description": "Visualiza puertos en escucha, comprueba disponibilidad y mata procesos — todo dentro de VS Code. Compatible con macOS, Windows y Linux.",
+  "view.title": "Puertos",
+  "cmd.show": "PortPilot: Mostrar puertos en escucha",
+  "cmd.checkPort": "PortPilot: Verificar disponibilidad de puerto",
+  "cmd.killPort": "PortPilot: Cerrar puerto",
+  "cmd.setLanguage": "PortPilot: Cambiar idioma",
+  "cmd.showAncestry": "PortPilot: Mostrar ancestros del proceso",
+  "config.language.description": "Anula el idioma de la interfaz (auto = seguir el idioma de VS Code)",
+  "config.witr.enabled.description": "Activar el enriquecimiento de ancestros de proceso con WITR (binario incluido)",
+  "config.witr.binaryPath.description": "Ruta al binario de witr (vacío = usar el incluido)",
+  "config.mcp.autoconfig.description": "Registrar automáticamente el servidor MCP de PortPilot en VS Code y otros clientes al activar",
+  "config.mcp.enabled.description": "Habilitar el servidor MCP de PortPilot",
+  "config.mcp.disabledTools.description": "Lista de nombres de herramientas MCP para deshabilitar",
+  "mcp.providerLabel": "PortPilot",
+  "config.mcp.enabled.description": "Interruptor maestro para el servidor MCP de PortPilot. Cuando está apagado, no se exponen herramientas a los clientes (VS Code, Cursor, Copilot, etc.).",
+  "config.mcp.disabledTools.description": "Lista de nombres de herramientas MCP a ocultar de los clientes. Usa la pestaña \"Tools\" del panel lateral para activar/desactivar herramientas individuales.",
+  "setLanguage.prompt": "Seleccionar idioma",
+  "setLanguage.current": "actual",
+  "setLanguage.changed": "Idioma: {0} (recargar ventana)"
+}
