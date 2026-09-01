@@ -6,7 +6,10 @@
   "cmd.checkPort": "PortPilot: 检查端口可用性",
   "cmd.killPort": "PortPilot: 关闭端口",
   "cmd.setLanguage": "PortPilot: 设置语言",
+  "cmd.showAncestry": "PortPilot: 显示进程来源链",
   "config.language.description": "覆盖界面语言(自动 = 跟随 VS Code 显示语言)",
+  "config.witr.enabled.description": "启用 WITR 进程来源链丰富(已内置二进制)",
+  "config.witr.binaryPath.description": "witr 二进制路径(留空 = 使用内置)",
   "setLanguage.prompt": "选择语言",
   "setLanguage.current": "当前",
   "setLanguage.changed": "语言: {0} (重新加载窗口)"

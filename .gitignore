@@ -1,1 +1,5 @@
 node_modules
+resources/bin/witr-*
+!resources/bin/.gitkeep
+!resources/bin/README.md
+*.vsix

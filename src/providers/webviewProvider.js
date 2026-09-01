@@ -4,22 +4,27 @@
 
 const vscode = require("vscode");
 const { getWebviewContent } = require("../webview");
-const { getListeningPorts, killByPid } = require("../core/portService");
+const { getListeningPorts, getListeningPortsEnriched, killByPid } = require("../core/portService");
 const { MESSAGE_TYPE, COMMAND } = require("../core/constants");
+const { probe } = require("../witr");
 const i18n = require("../i18n");
 
 /**
  * Create the webview provider for the sidebar panel
+ * @param {vscode.ExtensionContext} [ctx] - optional extension context; when omitted,
+ *   WITR enrichment is disabled (used by tests).
  * @returns {Object} WebviewViewProvider
  */
-function createWebviewProvider() {
+function createWebviewProvider(ctx) {
+  const witrAvailability = ctx ? probe(ctx) : { status: "skipped", hint: "no context" };
+
   return {
     resolveWebviewView(webviewView) {
       webviewView.webview.options = { enableScripts: true };
       webviewView.webview.html = getWebviewContent(i18n.getWebviewStrings());
 
       webviewView.webview.onDidReceiveMessage((msg) => {
-        handleMessage(msg, webviewView.webview);
+        handleMessage(msg, webviewView.webview, witrAvailability);
       });
     },
   };
@@ -29,11 +34,12 @@ function createWebviewProvider() {
  * Handle messages from the webview
  * @param {Object} msg - Message from webview
  * @param {Object} webview - Webview instance
+ * @param {Object} witrAvailability - { status, binaryPath?, hint? }
  */
-function handleMessage(msg, webview) {
+function handleMessage(msg, webview, witrAvailability) {
   switch (msg.command) {
     case COMMAND.REFRESH:
-      handleRefresh(webview);
+      handleRefresh(webview, witrAvailability);
       break;
 
     case COMMAND.KILL:
@@ -72,12 +78,34 @@ async function handleSetLanguage(lang) {
 }
 
 /**
- * Send current ports to the webview
+ * Send current ports to the webview. Enriches with WITR ancestry when
+ * the bundled binary is available; otherwise falls back to plain ports.
  * @param {Object} webview
+ * @param {Object} witrAvailability
  */
-function handleRefresh(webview) {
-  const ports = getListeningPorts();
-  webview.postMessage({ type: MESSAGE_TYPE.PORTS, ports });
+async function handleRefresh(webview, witrAvailability) {
+  let payload;
+  if (witrAvailability && witrAvailability.status === "available" && witrAvailability.binaryPath) {
+    try {
+      const { ports, availability } = await getListeningPortsEnriched({
+        witrBin: witrAvailability.binaryPath,
+      });
+      payload = {
+        type: MESSAGE_TYPE.PORTS,
+        ports,
+        witr: { status: availability.status, enriched: availability.enriched || 0 },
+      };
+    } catch {
+      payload = { type: MESSAGE_TYPE.PORTS, ports: getListeningPorts() };
+    }
+  } else {
+    payload = {
+      type: MESSAGE_TYPE.PORTS,
+      ports: getListeningPorts(),
+      witr: { status: witrAvailability.status, hint: witrAvailability.hint },
+    };
+  }
+  webview.postMessage(payload);
 }
 
 /**

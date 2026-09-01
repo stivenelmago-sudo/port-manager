@@ -18,7 +18,7 @@ function activate(context) {
   i18n.init();
 
   // Register sidebar webview provider
-  const provider = createWebviewProvider();
+  const provider = createWebviewProvider(context);
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider("portManager.panel", provider)
   );

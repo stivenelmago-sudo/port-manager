@@ -6,7 +6,10 @@
   "cmd.checkPort": "PortPilot: पोर्ट उपलब्धता जाँचें",
   "cmd.killPort": "PortPilot: पोर्ट बंद करें",
   "cmd.setLanguage": "PortPilot: भाषा सेट करें",
+  "cmd.showAncestry": "PortPilot: प्रक्रिया वंश दिखाएँ",
   "config.language.description": "UI भाषा को ओवरराइड करें (auto = VS Code प्रदर्शन भाषा का पालन करें)",
+  "config.witr.enabled.description": "WITR प्रक्रिया वंश एन्हांसमेंट सक्षम करें (बंडल बाइनरी)",
+  "config.witr.binaryPath.description": "witr बाइनरी का पथ (खाली = बंडल का उपयोग करें)",
   "setLanguage.prompt": "भाषा चुनें",
   "setLanguage.current": "वर्तमान",
   "setLanguage.changed": "भाषा: {0} (विंडो पुनः लोड करें)"

@@ -67,7 +67,7 @@ console.log(`  Subscriptions registered: ${fakeContext.subscriptions.length}`);
 
 // Verify commands
 console.log("\n=== Commands registered ===");
-const expected = ["portManager.show", "portManager.checkPort", "portManager.killPort", "portManager.setLanguage"];
+const expected = ["portManager.show", "portManager.checkPort", "portManager.killPort", "portManager.setLanguage", "portManager.showAncestry"];
 let pass = 0, fail = 0;
 for (const id of expected) {
   const found = registeredCommands.find(c => c.id === id);

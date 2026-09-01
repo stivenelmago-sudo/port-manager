@@ -7,8 +7,8 @@ const net = require("net");
 const { PLATFORM, TIMEOUT, STATE } = require("./constants");
 
 /**
- * Get all listening ports on the system
- * @returns {Array<{port: number, pid: number|null, process: string, state: string}>}
+ * Get all listening ports on the system (sync, no WITR enrichment).
+ * @returns {Array<{port:number,pid:number|null,process:string,state:string}>}
  */
 function getListeningPorts() {
   let ports = [];
@@ -20,6 +20,30 @@ function getListeningPorts() {
   }
 
   return ports.map((p) => ({ ...p, state: STATE.LISTEN }));
+}
+
+/**
+ * Get listening ports enriched with WITR ancestry info. Async variant.
+ * Falls back to plain getListeningPorts() if WITR is unavailable or fails.
+ *
+ * @param {Object} [opts]
+ * @param {string} [opts.witrBin] - absolute path to witr binary
+ * @returns {Promise<{ports: Array, availability: object}>}
+ */
+async function getListeningPortsEnriched(opts = {}) {
+  const base = getListeningPorts().map((p) => ({ ...p, witr: null }));
+
+  if (!opts.witrBin) {
+    return { ports: base, availability: { status: "skipped" } };
+  }
+
+  try {
+    const { enrichPorts } = require("../witr");
+    const { enriched, availability } = await enrichPorts(base, opts.witrBin);
+    return { ports: base, availability: { ...availability, enriched } };
+  } catch {
+    return { ports: base, availability: { status: "error" } };
+  }
 }
 
 /**
@@ -227,6 +251,7 @@ function sortByPort(ports) {
 
 module.exports = {
   getListeningPorts,
+  getListeningPortsEnriched,
   killByPid,
   checkPortFree,
 };

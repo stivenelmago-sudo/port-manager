@@ -238,5 +238,41 @@ module.exports = function getStyles() {
   }
 
   .scan-panel label { font-size: 12px; opacity: 0.6; }
+
+  /* Ancestry column */
+  .ancestry {
+    max-width: 360px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+    opacity: 0.85;
+  }
+  .ancestry-chain {
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+  .ancestry-sup {
+    color: var(--vscode-textLink-foreground, #4ec9b0);
+    font-weight: 600;
+  }
+  .ancestry-sep { opacity: 0.5; }
+  .ancestry-leaf {
+    color: var(--vscode-editor-foreground);
+    opacity: 0.85;
+  }
+  .ancestry-none {
+    opacity: 0.35;
+  }
+
+  /* Toast warning variant */
+  .toast-warn {
+    background: var(--vscode-inputValidation-warningBackground, #5a4a00);
+    color: var(--vscode-inputValidation-warningForeground, #fff);
+    border-color: var(--vscode-inputValidation-warningBorder, #bfa000);
+  }
 `;
 };

@@ -27,6 +27,7 @@ module.exports = {
     KILLED: "killed",
     KILL_ERROR: "killError",
     SCAN_RESULT: "scanResult",
+    WITR_HINT: "witrHint",
   },
 
   // Commands from webview

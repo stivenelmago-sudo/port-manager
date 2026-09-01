@@ -10,6 +10,7 @@ module.exports = function getScript(strings = {}) {
     colState: strings.colState || "State",
     colProcess: strings.colProcess || "Process",
     colPid: strings.colPid || "PID",
+    colAncestry: strings.colAncestry || "Ancestry",
     colAction: strings.colAction || "Action",
     stateListen: strings.stateListen || "LISTEN",
     stateFree: strings.stateFree || "FREE",
@@ -23,6 +24,10 @@ module.exports = function getScript(strings = {}) {
     bulkKill: strings.bulkKill || "KILL Selected",
     refresh: strings.refresh || "Refresh",
     rangeScan: strings.rangeScan || "Range Scan",
+    ancestryNone: strings.ancestryNone || "—",
+    ancestryLoading: strings.ancestryLoading || "loading…",
+    witrMissing: strings.witrMissing || "Process ancestry unavailable",
+    witrPermission: strings.witrPermission || "Run VS Code as Admin/sudo for full ancestry",
   });
 
   return /*javascript*/ `
@@ -56,8 +61,11 @@ module.exports = function getScript(strings = {}) {
 
     switch (msg.type) {
       case "ports":
-        ports = msg.ports;
+        ports = msg.ports || [];
         render();
+        if (msg.witr && msg.witr.status && msg.witr.status !== "available" && msg.witr.hint) {
+          showOnce(msg.witr.status, T.witrMissing + " — " + msg.witr.hint);
+        }
         break;
 
       case "killed":
@@ -79,6 +87,13 @@ module.exports = function getScript(strings = {}) {
     }
   });
 
+  const shownHints = new Set();
+  function showOnce(key, message) {
+    if (shownHints.has(key)) return;
+    shownHints.add(key);
+    showToast(message, "warn");
+  }
+
   // Render the port table
   function render() {
     const list = filterAndSort();
@@ -92,9 +107,11 @@ module.exports = function getScript(strings = {}) {
     let list = ports.filter((p) => {
       if (!filter) return true;
       const f = filter.toLowerCase();
+      const ancestryText = (p.witr && p.witr.chain) ? p.witr.chain : "";
       return (
         String(p.port).includes(f) ||
-        (p.process || "").toLowerCase().includes(f)
+        (p.process || "").toLowerCase().includes(f) ||
+        ancestryText.toLowerCase().includes(f)
       );
     });
 
@@ -106,6 +123,11 @@ module.exports = function getScript(strings = {}) {
       else if (col === "state") cmp = (a.state || "").localeCompare(b.state || "");
       else if (col === "process") cmp = (a.process || "").localeCompare(b.process || "");
       else if (col === "pid") cmp = (a.pid || 0) - (b.pid || 0);
+      else if (col === "ancestry") {
+        const ax = (a.witr && a.witr.chain) || "";
+        const bx = (b.witr && b.witr.chain) || "";
+        cmp = ax.localeCompare(bx);
+      }
 
       return currentSort.dir === "asc" ? cmp : -cmp;
     });
@@ -144,17 +166,44 @@ module.exports = function getScript(strings = {}) {
 
     const actionHtml = isListen ? renderActionButtons(p, isConfirming) : "";
 
+    const ancestryHtml = renderAncestry(p);
+
     return (
       '<tr class="' + (isSelected ? "selected" : "") + '">' +
-      "<td><input type=\\"checkbox\\" " + (isSelected ? "checked" : "") +
+      "<td><input type=\"checkbox\" " + (isSelected ? "checked" : "") +
       ' onchange="togglePort(' + p.port + ')"></td>' +
       '<td class="port-num">:' + p.port + "</td>" +
       '<td><span class="badge ' + badgeClass + '">' + badgeText + "</span></td>" +
       '<td class="process-name">' + (p.process || "-") + "</td>" +
       '<td class="pid">' + (p.pid || "-") + "</td>" +
+      '<td class="ancestry">' + ancestryHtml + "</td>" +
       '<td style="text-align:right">' + actionHtml + "</td>" +
       "</tr>"
     );
+  }
+
+  function renderAncestry(p) {
+    if (!p.witr || !p.witr.chain) {
+      return '<span class="ancestry-none">' + escapeHtml(T.ancestryNone) + "</span>";
+    }
+    const chain = p.witr.chain;
+    const supervisor = p.witr.supervisor || "";
+    const title = supervisor ? "title=\"" + escapeHtml(supervisor) + "\"" : "";
+    return (
+      '<span class="ancestry-chain" ' + title + ">" +
+      '<span class="ancestry-sup">' + escapeHtml(supervisor || chain.split("→")[0].trim()) + "</span>" +
+      '<span class="ancestry-sep"> → </span>' +
+      '<span class="ancestry-leaf">' + escapeHtml(p.witr.leafName || chain.split("→").pop().trim()) + "</span>" +
+      "</span>"
+    );
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
   }
 
   function renderActionButtons(p, isConfirming) {
@@ -184,6 +233,7 @@ module.exports = function getScript(strings = {}) {
       state: T.colState,
       process: T.colProcess,
       pid: T.colPid,
+      ancestry: T.colAncestry,
     };
     document.querySelectorAll("th[data-sort]").forEach((th) => {
       const col = th.dataset.sort;

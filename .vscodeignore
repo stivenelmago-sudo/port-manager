@@ -4,3 +4,11 @@ node_modules/**
 .gitignore
 .git/**
 scripts/**
+
+# Exclude binaries for other platforms — CI builds one VSIX per platform
+resources/bin/witr-linux-*
+!resources/bin/witr-linux-*.gitkeep
+resources/bin/witr-darwin-*
+!resources/bin/witr-darwin-*.gitkeep
+resources/bin/witr-windows-*
+!resources/bin/witr-windows-*.gitkeep

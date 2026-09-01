@@ -6,7 +6,10 @@
   "cmd.checkPort": "PortPilot: التحقق من توفر المنفذ",
   "cmd.killPort": "PortPilot: إغلاق المنفذ",
   "cmd.setLanguage": "PortPilot: تعيين اللغة",
+  "cmd.showAncestry": "PortPilot: عرض سلسلة العملية",
   "config.language.description": "تجاوز لغة الواجهة (تلقائي = اتباع لغة عرض VS Code)",
+  "config.witr.enabled.description": "تفعيل إثراء سلسلة العملية عبر WITR (الملف الثنائي مضمن)",
+  "config.witr.binaryPath.description": "مسار ملف witr الثنائي (فارغ = استخدام المضمن)",
   "setLanguage.prompt": "اختر اللغة",
   "setLanguage.current": "الحالي",
   "setLanguage.changed": "اللغة: {0} (أعد تحميل النافذة)"

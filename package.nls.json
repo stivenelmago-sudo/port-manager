@@ -6,7 +6,10 @@
   "cmd.checkPort": "PortPilot: Check Port Availability",
   "cmd.killPort": "PortPilot: Kill Port",
   "cmd.setLanguage": "PortPilot: Set Language",
+  "cmd.showAncestry": "PortPilot: Show Process Ancestry",
   "config.language.description": "Override the UI language (auto = follow VS Code display language)",
+  "config.witr.enabled.description": "Enable WITR process ancestry enrichment (bundled binary)",
+  "config.witr.binaryPath.description": "Override the path to the witr binary (empty = use bundled)",
   "setLanguage.prompt": "Select language",
   "setLanguage.current": "current",
   "setLanguage.changed": "Language: {0} (reload window)"

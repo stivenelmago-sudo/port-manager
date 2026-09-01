@@ -15,8 +15,52 @@ function registerCommands(context) {
   context.subscriptions.push(
     vscode.commands.registerCommand("portManager.show", showPortsCommand),
     vscode.commands.registerCommand("portManager.checkPort", checkPortCommand),
-    vscode.commands.registerCommand("portManager.killPort", killPortCommand)
+    vscode.commands.registerCommand("portManager.killPort", killPortCommand),
+    vscode.commands.registerCommand("portManager.showAncestry", showAncestryCommand)
   );
+}
+
+/**
+ * QuickPick: select a port → show its full witr ancestry chain.
+ */
+async function showAncestryCommand() {
+  const { getListeningPortsEnriched } = require("../core/portService");
+  const { probe } = require("../witr");
+  // We need the context to resolve the binary path. Fall back to a relative
+  // resolution via the repo root when invoked from the command palette
+  // without a known context (handled by witr.host.binaryPath fallback).
+  const availability = probe({
+    asAbsolutePath: (p) => require("path").resolve(__dirname, "..", "..", p),
+  });
+
+  let ports;
+  if (availability.status === "available") {
+    const out = await getListeningPortsEnriched({ witrBin: availability.binaryPath });
+    ports = out.ports;
+  } else {
+    ports = getListeningPorts();
+  }
+
+  const items = ports.map((p) => {
+    const ancestry = p.witr && p.witr.chain ? p.witr.chain : "(no ancestry)";
+    return {
+      label: `:${p.port}`,
+      description: `${p.process} (PID: ${p.pid})`,
+      detail: ancestry,
+      port: p.port,
+    };
+  });
+
+  if (items.length === 0) {
+    vscode.window.showInformationMessage(t("noPorts"));
+    return;
+  }
+
+  await vscode.window.showQuickPick(items, {
+    placeHolder: t("quickPickPlaceholder"),
+    matchOnDescription: true,
+    matchOnDetail: true,
+  });
 }
 
 /**

@@ -34,6 +34,7 @@ function getWebviewContent(strings = {}) {
     colState: "State",
     colProcess: "Process",
     colPid: "PID",
+    colAncestry: "Ancestry",
     colAction: "Action",
     stateListen: "LISTEN",
     stateFree: "FREE",
@@ -41,6 +42,10 @@ function getWebviewContent(strings = {}) {
     confirm: "Confirm",
     cancel: "Cancel",
     langMenu: "🌐 Language",
+    ancestryNone: "—",
+    ancestryLoading: "loading…",
+    witrMissing: "Process ancestry unavailable",
+    witrPermission: "Run VS Code as Admin/sudo for full ancestry",
   }, strings);
   s._supported = strings._supported || [];
 
@@ -106,6 +111,7 @@ function getTable(s) {
       <th data-sort="state" onclick="sortBy('state')">${escape(s.colState)}</th>
       <th data-sort="process" onclick="sortBy('process')">${escape(s.colProcess)}</th>
       <th data-sort="pid" onclick="sortBy('pid')">${escape(s.colPid)}</th>
+      <th data-sort="ancestry" onclick="sortBy('ancestry')">${escape(s.colAncestry)}</th>
       <th style="text-align:right">${escape(s.colAction)}</th>
     </tr>
   </thead>
