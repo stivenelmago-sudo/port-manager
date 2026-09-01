@@ -1,5 +1,5 @@
 /**
- * Port Manager - Constants
+ * PortPilot - Constants
  */
 
 const os = require("os");

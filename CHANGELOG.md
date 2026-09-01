@@ -1,6 +1,6 @@
 # Change Log
 
-All notable changes to the "Port Manager" extension will be documented in this file.
+All notable changes to the "PortPilot" extension will be documented in this file.
 
 ## [1.1.0] - 2026-09-01
 
@@ -8,7 +8,7 @@ All notable changes to the "Port Manager" extension will be documented in this f
 - **Multi-language support**: UI available in English, Español, Chinese, हिन्दी, العربية, 日本語
 - Automatic language detection from VS Code display language
 - Manual language override via `portManager.language` setting
-- New command `Port Manager: Set Language`
+- New command `PortPilot: Set Language`
 - Right-to-left (RTL) layout for Arabic
 - `package.nls.*.json` files for native VS Code localization of commands and views
 

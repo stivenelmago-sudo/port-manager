@@ -1,5 +1,5 @@
 /**
- * Port Manager - Webview HTML Generator
+ * PortPilot - Webview HTML Generator
  */
 
 const getStyles = require("./styles");

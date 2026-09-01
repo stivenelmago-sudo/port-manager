@@ -1,5 +1,5 @@
 /**
- * Port Manager - Webview Client Script
+ * PortPilot - Webview Client Script
  */
 
 module.exports = function getScript(strings = {}) {

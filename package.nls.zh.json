@@ -1,10 +1,10 @@
 {
-  "ext.displayName": "Port Manager",
+  "ext.displayName": "PortPilot",
   "ext.description": "View listening ports, check availability, and kill processes — all inside VS Code. Supports macOS, Windows, and Linux.",
   "view.title": "Ports",
-  "cmd.show": "Port Manager: Show Listening Ports",
-  "cmd.checkPort": "Port Manager: Check Port Availability",
-  "cmd.killPort": "Port Manager: Kill Port",
-  "cmd.setLanguage": "Port Manager: Set Language",
+  "cmd.show": "PortPilot: Show Listening Ports",
+  "cmd.checkPort": "PortPilot: Check Port Availability",
+  "cmd.killPort": "PortPilot: Kill Port",
+  "cmd.setLanguage": "PortPilot: Set Language",
   "config.language.description": "Override UI language (auto = follow VS Code display language)"
 }

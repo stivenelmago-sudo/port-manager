@@ -1,5 +1,5 @@
 /**
- * Port Manager - Port Detection & Management Service
+ * PortPilot - Port Detection & Management Service
  */
 
 const { execSync } = require("child_process");

@@ -1,5 +1,5 @@
 /**
- * Port Manager - Webview Styles
+ * PortPilot - Webview Styles
  */
 
 module.exports = function getStyles() {

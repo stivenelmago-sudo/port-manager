@@ -1,5 +1,5 @@
 /**
- * Port Manager - Webview Provider
+ * PortPilot - Webview Provider
  */
 
 const { getWebviewContent } = require("../webview");

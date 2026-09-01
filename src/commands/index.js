@@ -1,5 +1,5 @@
 /**
- * Port Manager - VS Code Commands
+ * PortPilot - VS Code Commands
  */
 
 const vscode = require("vscode");

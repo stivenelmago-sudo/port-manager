@@ -1,17 +1,17 @@
 /**
- * Port Manager - Translation messages
+ * PortPilot - Translation messages
  * 6 idiomas: en, es, zh, hi, ar, ja
  */
 
 const MESSAGES = {
   en: {
     ext: {
-      description: "Port Manager",
+      description: "PortPilot",
     },
     cmd: {
-      show: "Port Manager: Show Listening Ports",
-      checkPort: "Port Manager: Check Port Availability",
-      killPort: "Port Manager: Kill Port",
+      show: "PortPilot: Show Listening Ports",
+      checkPort: "PortPilot: Check Port Availability",
+      killPort: "PortPilot: Kill Port",
     },
     view: {
       title: "Ports",
@@ -61,12 +61,12 @@ const MESSAGES = {
   },
   es: {
     ext: {
-      description: "Port Manager",
+      description: "PortPilot",
     },
     cmd: {
-      show: "Port Manager: Mostrar puertos en escucha",
-      checkPort: "Port Manager: Verificar disponibilidad de puerto",
-      killPort: "Port Manager: Cerrar puerto",
+      show: "PortPilot: Mostrar puertos en escucha",
+      checkPort: "PortPilot: Verificar disponibilidad de puerto",
+      killPort: "PortPilot: Cerrar puerto",
     },
     view: {
       title: "Puertos",
@@ -116,12 +116,12 @@ const MESSAGES = {
   },
   zh: {
     ext: {
-      description: "Port Manager",
+      description: "PortPilot",
     },
     cmd: {
-      show: "Port Manager: Show Listening Ports",
-      checkPort: "Port Manager: Check Port Availability",
-      killPort: "Port Manager: Kill Port",
+      show: "PortPilot: Show Listening Ports",
+      checkPort: "PortPilot: Check Port Availability",
+      killPort: "PortPilot: Kill Port",
     },
     view: {
       title: "Ports",
@@ -171,12 +171,12 @@ const MESSAGES = {
   },
   hi: {
     ext: {
-      description: "Port Manager",
+      description: "PortPilot",
     },
     cmd: {
-      show: "Port Manager: सुनने वाले पोर्ट दिखाएँ",
-      checkPort: "Port Manager: पोर्ट उपलब्धता जाँचें",
-      killPort: "Port Manager: पोर्ट बंद करें",
+      show: "PortPilot: सुनने वाले पोर्ट दिखाएँ",
+      checkPort: "PortPilot: पोर्ट उपलब्धता जाँचें",
+      killPort: "PortPilot: पोर्ट बंद करें",
     },
     view: {
       title: "पोर्ट्स",
@@ -226,12 +226,12 @@ const MESSAGES = {
   },
   ar: {
     ext: {
-      description: "Port Manager",
+      description: "PortPilot",
     },
     cmd: {
-      show: "Port Manager: عرض المنافذ المستمعة",
-      checkPort: "Port Manager: التحقق من توفر المنفذ",
-      killPort: "Port Manager: إغلاق المنفذ",
+      show: "PortPilot: عرض المنافذ المستمعة",
+      checkPort: "PortPilot: التحقق من توفر المنفذ",
+      killPort: "PortPilot: إغلاق المنفذ",
     },
     view: {
       title: "المنافذ",
@@ -281,12 +281,12 @@ const MESSAGES = {
   },
   ja: {
     ext: {
-      description: "Port Manager",
+      description: "PortPilot",
     },
     cmd: {
-      show: "Port Manager: リスニングポートを表示",
-      checkPort: "Port Manager: ポートの空き状況を確認",
-      killPort: "Port Manager: ポートを終了",
+      show: "PortPilot: リスニングポートを表示",
+      checkPort: "PortPilot: ポートの空き状況を確認",
+      killPort: "PortPilot: ポートを終了",
     },
     view: {
       title: "ポート",

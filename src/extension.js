@@ -1,5 +1,5 @@
 /**
- * Port Manager - VS Code Extension
+ * PortPilot - VS Code Extension
  *
  * View listening ports, check availability, and kill processes.
  * Works on macOS, Windows, and Linux.

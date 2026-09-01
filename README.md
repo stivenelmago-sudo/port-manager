@@ -1,7 +1,7 @@
-# ⚡ Port Manager
+# ⚡ PortPilot
 
-[![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/port-manager-saiki.port-manager?style=flat-square&label=VS%20Code%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=port-manager-saiki.port-manager)
-[![Installs](https://img.shields.io/visual-studio-marketplace/i/port-manager-saiki.port-manager?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=port-manager-saiki.port-manager)
+[![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/port-manager-saiki.portpilot?style=flat-square&label=VS%20Code%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=port-manager-saiki.portpilot)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/port-manager-saiki.portpilot?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=port-manager-saiki.portpilot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 
 ---
@@ -10,10 +10,10 @@
 
 > This little extension runs on coffee, late nights, and **GitHub stars**. ☕
 > Every star you give makes a stuck port magically free itself somewhere in the world. 🌍✨
-> So go ahead — **[hit that ⭐ here](https://github.com/saisai-web/port-manager)** and help us hit the front page!
+> So go ahead — **[hit that ⭐ here](https://github.com/saisai-web/portpilot)** and help us hit the front page!
 
 **🤝 Pull Requests are super welcome!**
-Found a bug? Got a wild idea? [Open a PR](https://github.com/saisai-web/port-manager/pulls) — we don't bite. (The ports might, but we promise *we* don't.) 🔌
+Found a bug? Got a wild idea? [Open a PR](https://github.com/saisai-web/portpilot/pulls) — we don't bite. (The ports might, but we promise *we* don't.) 🔌
 
 **👋 Let's connect & grow together!**
 Always looking for new friends — I follow back! [Follow me on GitHub](https://github.com/saisai-web), drop a hello, and let's vibe. Mutual follows = mutual good vibes. 🚀
@@ -22,7 +22,7 @@ Always looking for new friends — I follow back! [Follow me on GitHub](https://
 
 **View listening ports, check availability, and kill processes — all inside VS Code.**
 
-No more switching to a terminal to find out what's hogging port 3000. Port Manager gives you a dedicated sidebar panel and quick commands to manage your local ports without leaving your editor.
+No more switching to a terminal to find out what's hogging port 3000. PortPilot gives you a dedicated sidebar panel and quick commands to manage your local ports without leaving your editor.
 <img width="851" height="776" alt="スクリーンショット 2026-02-21 11 28 19" src="https://github.com/user-attachments/assets/8cc76ccd-96a3-4cb0-a727-0a54fa258896" />
 
 
@@ -44,9 +44,9 @@ Three commands accessible via `Ctrl+Shift+P` / `Cmd+Shift+P`:
 
 | Command | Description |
 |---------|-------------|
-| **Port Manager: Show Listening Ports** | Quick Pick list → select a port to kill |
-| **Port Manager: Check Port Availability** | Enter a port number → see if it's free or occupied |
-| **Port Manager: Kill Port** | Enter port number(s) → kill immediately (comma-separated for bulk) |
+| **PortPilot: Show Listening Ports** | Quick Pick list → select a port to kill |
+| **PortPilot: Check Port Availability** | Enter a port number → see if it's free or occupied |
+| **PortPilot: Kill Port** | Enter port number(s) → kill immediately (comma-separated for bulk) |
 
 ### 🎨 Theme Support
 
@@ -65,7 +65,7 @@ UI is available in **6 languages**:
 | 🇸🇦 العربية | `ar` (RTL) |
 | 🇯🇵 日本語 | `ja` |
 
-The extension automatically follows your VS Code display language. To override, run **Port Manager: Set Language** from the command palette, or set `portManager.language` in your settings.
+The extension automatically follows your VS Code display language. To override, run **PortPilot: Set Language** from the command palette, or set `portManager.language` in your settings.
 
 ## Supported Platforms
 

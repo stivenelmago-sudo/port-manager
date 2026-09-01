@@ -1,5 +1,5 @@
 /**
- * Port Manager - Internationalization
+ * PortPilot - Internationalization
  *
  * Idiomas soportados:
  *   - en: English

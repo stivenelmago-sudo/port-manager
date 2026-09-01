@@ -8,7 +8,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const EXT_DIR = "/root/.vscode-server/extensions/port-manager-saiki.port-manager-1.1.0";
+const EXT_DIR = path.resolve(__dirname, "..");
 const pkg = JSON.parse(fs.readFileSync(path.join(EXT_DIR, "package.json"), "utf8"));
 
 function applyNLS(pkgObj, nls) {

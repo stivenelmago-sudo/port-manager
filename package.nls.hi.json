@@ -1,10 +1,10 @@
 {
-  "ext.displayName": "Port Manager",
-  "ext.description": "देखें सुनने वाले पोर्ट, उपलब्धता जाँचें और प्रक्रियाएँ बंद करें — सब VS Code के अंदर। macOS, Windows और Linux पर काम करता है।",
+  "ext.displayName": "PortPilot",
+  "ext.description": "देखें कौन से पोर्ट सुन रहे हैं, उपलब्धता जाँचें, और प्रक्रियाएँ बंद करें — सब कुछ VS Code के अंदर। macOS, Windows और Linux पर काम करता है।",
   "view.title": "पोर्ट्स",
-  "cmd.show": "Port Manager: सुनने वाले पोर्ट दिखाएँ",
-  "cmd.checkPort": "Port Manager: पोर्ट उपलब्धता जाँचें",
-  "cmd.killPort": "Port Manager: पोर्ट बंद करें",
-  "cmd.setLanguage": "Port Manager: भाषा सेट करें",
-  "config.language.description": "UI भाषा को ओवरराइड करें (auto = VS Code प्रदर्शन भाषा का पालन करें)"
+  "cmd.show": "PortPilot: सुनने वाले पोर्ट दिखाएँ",
+  "cmd.checkPort": "PortPilot: पोर्ट उपलब्धता जाँचें",
+  "cmd.killPort": "PortPilot: पोर्ट बंद करें",
+  "cmd.setLanguage": "PortPilot: भाषा सेट करें",
+  "config.language.description": "UI भाषा बदलें (auto = VS Code की भाषा का अनुसरण करें)"
 }
