@@ -36,6 +36,13 @@ module.exports = {
     BULK_KILL: "bulkKill",
     SCAN: "scan",
     SET_LANGUAGE: "setLanguage",
+    REFRESH_PROCESSES: "refreshProcesses",
+    REFRESH_CONTAINERS: "refreshContainers",
+    REFRESH_LOCKS: "refreshLocks",
+    GET_PROCESS_DETAILS: "getProcessDetails",
+    GET_CONTAINER_DETAILS: "getContainerDetails",
+    CONTAINER_ACTION: "containerAction",
+    PROCESS_ACTION: "processAction",
   },
 
   // Port states

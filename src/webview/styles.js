@@ -467,5 +467,28 @@ module.exports = function getStyles() {
     text-align: right;
   }
   tr { cursor: pointer; }
+
+  /* Runtime badge (docker, podman, k8s, etc.) */
+  .badge-runtime {
+    background: var(--vscode-badge-background, #4d4d4d);
+    color: var(--vscode-badge-foreground, #fff);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 8px;
+  }
+  .badge-paused {
+    background: var(--vscode-charts-yellow, #cca700);
+    color: #1a1a1a;
+  }
+
+  /* Locks toggle */
+  .locks-toggle {
+    display: block;
+    padding: 8px 12px;
+    font-size: 12px;
+    opacity: 0.85;
+    cursor: pointer;
+  }
 `;
 };

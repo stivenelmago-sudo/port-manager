@@ -305,10 +305,83 @@ function sortByPort(ports) {
   return ports.sort((a, b) => a.port - b.port);
 }
 
+/**
+ * Send an arbitrary POSIX signal to a PID.
+ * Returns true on success, false if the process is gone.
+ * Throws on hard failures (permission denied, etc.).
+ */
+function sendSignal(pid, signal) {
+  if (process.platform === "win32") {
+    throw new Error("POSIX signals are not supported on Windows");
+  }
+  try {
+    process.kill(pid, signal);
+    return true;
+  } catch (e) {
+    if (e.code === "ESRCH") return false;
+    throw e;
+  }
+}
+
+/**
+ * SIGTERM — terminate gracefully.
+ */
+function terminateByPid(pid) {
+  return sendSignal(pid, "SIGTERM");
+}
+
+/**
+ * SIGSTOP — pause the process.
+ */
+function pauseByPid(pid) {
+  return sendSignal(pid, "SIGSTOP");
+}
+
+/**
+ * SIGCONT — resume a paused process.
+ */
+function resumeByPid(pid) {
+  return sendSignal(pid, "SIGCONT");
+}
+
+/**
+ * Adjust the nice value of a process (-20 highest priority, 19 lowest).
+ */
+function renice(pid, nice) {
+  const n = parseInt(nice, 10);
+  if (Number.isNaN(n) || n < -20 || n > 19) {
+    throw new Error(`Invalid nice value: ${nice}`);
+  }
+  // Cross-platform: on POSIX use nice(2) via the `nice` CLI so it can elevate
+  // when needed. On Windows, there's no equivalent — fall back to a no-op.
+  if (process.platform === "win32") {
+    throw new Error("Renice is not supported on Windows");
+  }
+  const { execSync } = require("child_process");
+  try {
+    execSync(`renice -n ${n} -p ${pid}`, { timeout: 3000 });
+    return { pid, nice: n };
+  } catch (e) {
+    // Renice to lower priority never needs privileges; raising might.
+    // Retry via shell `nice` to allow passwordless sudo on systems that have it.
+    try {
+      execSync(`nice -n ${n} renice -n ${n} -p ${pid}`, { timeout: 3000 });
+      return { pid, nice: n };
+    } catch (e2) {
+      throw new Error(`renice failed: ${e2.message}`);
+    }
+  }
+}
+
 module.exports = {
   getListeningPorts,
   getListeningPortsEnriched,
   killByPid,
   killGraceful,
+  terminateByPid,
+  pauseByPid,
+  resumeByPid,
+  renice,
+  sendSignal,
   checkPortFree,
 };

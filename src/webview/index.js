@@ -73,6 +73,31 @@ function getWebviewContent(strings = {}) {
     colCpu: "CPU",
     colMemory: "Memory",
     colCommand: "Command",
+    // Containers
+    tabContainers: "Containers",
+    emptyContainers: "No containers found",
+    colRuntime: "Runtime",
+    colImage: "Image",
+    colStatus: "Status",
+    colAction2: "Actions",
+    actionStop: "Stop",
+    actionRestart: "Restart",
+    actionStart: "Start",
+    actionPause: "Pause",
+    actionLogs: "Logs",
+    actionInspect: "Inspect",
+    // Locks
+    tabLocks: "Locks",
+    emptyLocks: "No file locks found",
+    colFd: "FD",
+    colPath: "Path",
+    colInode: "Inode",
+    locksAllOpen: "Show all open files",
+    // Process actions
+    actionTerminate: "Terminate",
+    actionResume: "Resume",
+    actionRenice: "Renice",
+    niceValue: "Nice value (-20 to 19)",
   }, strings);
   s._supported = strings._supported || [];
 
@@ -91,6 +116,8 @@ function getWebviewContent(strings = {}) {
   ${getScanPanel(s)}
   <div class="stats" id="stats"></div>
   ${getTable(s)}
+  ${getContainersPanel(s)}
+  ${getLocksPanel(s)}
   <div class="empty" id="empty" style="display:none">${escape(s.empty)}</div>
   ${getDetailsPanel(s)}
   <div id="toastContainer"></div>
@@ -102,16 +129,56 @@ function getWebviewContent(strings = {}) {
 function getTabs(s) {
   return /*html*/ `
 <div class="tabs" role="tablist">
-  <button class="tab tab-active" data-tab="ports" role="tab" aria-selected="true">
-    ${escape(s.tabPorts)}
-  </button>
-  <button class="tab" data-tab="processes" role="tab" aria-selected="false">
-    ${escape(s.tabProcesses)}
-  </button>
+  <button class="tab tab-active" data-tab="ports" role="tab" aria-selected="true">${escape(s.tabPorts)}</button>
+  <button class="tab" data-tab="processes" role="tab" aria-selected="false">${escape(s.tabProcesses)}</button>
+  <button class="tab" data-tab="containers" role="tab" aria-selected="false">${escape(s.tabContainers)}</button>
+  <button class="tab" data-tab="locks" role="tab" aria-selected="false">${escape(s.tabLocks)}</button>
   <button class="tab-refresh" id="autoRefreshToggle" title="${escape(s.autoRefreshOn)}">
     <span class="dot dot-pulse"></span>
     <span id="autoRefreshLabel">${escape(s.autoRefreshOn)}</span>
   </button>
+</div>`;
+}
+
+function getContainersPanel(s) {
+  return /*html*/ `
+<div id="containersPanel" style="display:none">
+  <table id="containersTable">
+    <thead>
+      <tr>
+        <th data-sort="runtime">${escape(s.colRuntime)}</th>
+        <th data-sort="name">${escape(s.colProcess)}</th>
+        <th data-sort="image">${escape(s.colImage)}</th>
+        <th data-sort="state">${escape(s.colState)}</th>
+        <th data-sort="status">${escape(s.colStatus)}</th>
+        <th style="text-align:right">${escape(s.colAction2)}</th>
+      </tr>
+    </thead>
+    <tbody id="containersTbody"></tbody>
+  </table>
+  <div class="empty" id="containersEmpty" style="display:none">${escape(s.emptyContainers)}</div>
+</div>`;
+}
+
+function getLocksPanel(s) {
+  return /*html*/ `
+<div id="locksPanel" style="display:none">
+  <label class="locks-toggle">
+    <input type="checkbox" id="locksAllOpen"> ${escape(s.locksAllOpen)}
+  </label>
+  <table id="locksTable">
+    <thead>
+      <tr>
+        <th data-sort="type">${escape(s.colState)}</th>
+        <th data-sort="pid">${escape(s.colPid)}</th>
+        <th data-sort="fd">${escape(s.colFd)}</th>
+        <th data-sort="path">${escape(s.colPath)}</th>
+        <th data-sort="inode">${escape(s.colInode)}</th>
+      </tr>
+    </thead>
+    <tbody id="locksTbody"></tbody>
+  </table>
+  <div class="empty" id="locksEmpty" style="display:none">${escape(s.emptyLocks)}</div>
 </div>`;
 }
 

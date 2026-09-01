@@ -55,6 +55,28 @@ module.exports = function getScript(strings = {}) {
     colCpu: strings.colCpu || "CPU",
     colMemory: strings.colMemory || "Memory",
     colCommand: strings.colCommand || "Command",
+    tabContainers: strings.tabContainers || "Containers",
+    emptyContainers: strings.emptyContainers || "No containers found",
+    colRuntime: strings.colRuntime || "Runtime",
+    colImage: strings.colImage || "Image",
+    colStatus: strings.colStatus || "Status",
+    colAction2: strings.colAction2 || "Actions",
+    actionStop: strings.actionStop || "Stop",
+    actionRestart: strings.actionRestart || "Restart",
+    actionStart: strings.actionStart || "Start",
+    actionPause: strings.actionPause || "Pause",
+    actionLogs: strings.actionLogs || "Logs",
+    actionInspect: strings.actionInspect || "Inspect",
+    tabLocks: strings.tabLocks || "Locks",
+    emptyLocks: strings.emptyLocks || "No file locks found",
+    colFd: strings.colFd || "FD",
+    colPath: strings.colPath || "Path",
+    colInode: strings.colInode || "Inode",
+    locksAllOpen: strings.locksAllOpen || "Show all open files",
+    actionTerminate: strings.actionTerminate || "Terminate",
+    actionResume: strings.actionResume || "Resume",
+    actionRenice: strings.actionRenice || "Renice",
+    niceValue: strings.niceValue || "Nice value (-20 to 19)",
   });
 
   return /*javascript*/ `
@@ -64,12 +86,16 @@ module.exports = function getScript(strings = {}) {
   // ─── State ────────────────────────────────────────────────────────
   let ports = [];
   let processes = [];
+  let containers = [];
+  let containerRuntimes = [];
+  let locks = [];
   let selected = new Set();
   let currentSort = { col: "port", dir: "asc" };
   let currentTab = "ports";
   let filter = "";
   let confirmingKill = null;
   let detailsPid = null;
+  let locksShowAllOpen = false;
 
   // Auto-refresh state.
   const REFRESH_BASE_MS = 3000;
@@ -111,8 +137,29 @@ module.exports = function getScript(strings = {}) {
         if (currentTab === "processes") render();
         scheduleNextRefresh();
         break;
+      case "containers":
+        containers = msg.containers || [];
+        containerRuntimes = msg.runtimes || [];
+        if (currentTab === "containers") renderContainers();
+        scheduleNextRefresh();
+        break;
+      case "containerDetails":
+        renderContainerDetails(msg.runtime, msg.id, msg.data, msg.error);
+        break;
+      case "containerOutput":
+        renderContainerOutput(msg.runtime, msg.id, msg.action, msg.output);
+        break;
+      case "locks":
+        locks = msg.locks || [];
+        if (currentTab === "locks") renderLocks();
+        scheduleNextRefresh();
+        break;
       case "processDetails":
         renderDetails(msg.pid, ok ? null : msg.data, msg.error);
+        break;
+      case "processActionResult":
+        if (msg.ok) showToast(msg.action + " → pid " + msg.pid + ": OK", "success");
+        else showToast(msg.action + " → pid " + msg.pid + ": " + msg.error, "error");
         break;
       case "killed":
         showToast(":" + msg.port + " " + T.toastKilled, "success");
@@ -147,20 +194,193 @@ module.exports = function getScript(strings = {}) {
       b.classList.toggle("tab-active", active);
       b.setAttribute("aria-selected", active ? "true" : "false");
     });
-    // Show/hide column headers by tab
-    document.querySelectorAll("th[data-tab]").forEach((th) => {
-      th.style.display = th.dataset.tab === tab ? "" : "none";
-    });
+    // Toggle main table vs side panels.
+    elements.mainTable().style.display = tab === "ports" || tab === "processes" ? "" : "none";
+    const containersPanel = document.getElementById("containersPanel");
+    const locksPanel = document.getElementById("locksPanel");
+    if (containersPanel) containersPanel.style.display = tab === "containers" ? "block" : "none";
+    if (locksPanel) locksPanel.style.display = tab === "locks" ? "block" : "none";
+    elements.scanPanel().style.display = "none";
+    elements.bulkKillBtn().style.display = "none";
+
     // Reset sort per tab
-    currentSort = { col: tab === "ports" ? "port" : "pid", dir: "asc" };
+    if (tab === "ports") currentSort = { col: "port", dir: "asc" };
+    else if (tab === "processes") currentSort = { col: "pid", dir: "asc" };
+    else if (tab === "containers") currentSort = { col: "name", dir: "asc" };
+    else if (tab === "locks") currentSort = { col: "pid", dir: "asc" };
+
     filter = "";
     elements.search().value = "";
+
     if (tab === "ports") {
       vscode.postMessage({ command: "refresh" });
+      render();
     } else if (tab === "processes") {
       vscode.postMessage({ command: "refreshProcesses" });
+      render();
+    } else if (tab === "containers") {
+      vscode.postMessage({ command: "refreshContainers" });
+      renderContainers();
+    } else if (tab === "locks") {
+      vscode.postMessage({ command: "refreshLocks" });
+      renderLocks();
     }
-    render();
+  }
+
+  function renderContainers() {
+    const list = filterAndSortContainers();
+    const tbody = document.getElementById("containersTbody");
+    const empty = document.getElementById("containersEmpty");
+    if (!tbody) return;
+    if (list.length === 0) {
+      tbody.innerHTML = "";
+      empty.style.display = "block";
+      return;
+    }
+    empty.style.display = "none";
+    tbody.innerHTML = list.map(renderContainerRow).join("");
+  }
+
+  function filterAndSortContainers() {
+    let list = containers.filter((c) => {
+      if (!filter) return true;
+      const f = filter.toLowerCase();
+      return [c.name, c.image, c.runtime, c.status, c.state].join(" ").toLowerCase().includes(f);
+    });
+    list.sort((a, b) => {
+      let cmp = 0;
+      const col = currentSort.col;
+      if (col === "runtime") cmp = a.runtime.localeCompare(b.runtime);
+      else if (col === "name") cmp = a.name.localeCompare(b.name);
+      else if (col === "image") cmp = a.image.localeCompare(b.image);
+      else if (col === "state") cmp = a.state.localeCompare(b.state);
+      else if (col === "status") cmp = a.status.localeCompare(b.status);
+      return currentSort.dir === "asc" ? cmp : -cmp;
+    });
+    return list;
+  }
+
+  function renderContainerRow(c) {
+    const stateClass = c.state.toLowerCase().includes("run") ? "badge-listen"
+      : c.state.toLowerCase().includes("exit") ? "badge-free"
+      : "badge-paused";
+    const actions =
+      '<span class="confirm-group">' +
+        '<button class="btn btn-sm btn-danger" onclick="containerAction(\\'' + escapeHtml(c.runtime) + '\\',\\'' + escapeHtml(c.id) + '\\',\\'stop\\')">' + T.actionStop + '</button>' +
+        '<button class="btn btn-sm" onclick="containerAction(\\'' + escapeHtml(c.runtime) + '\\',\\'' + escapeHtml(c.id) + '\\',\\'restart\\')">' + T.actionRestart + '</button>' +
+        '<button class="btn btn-sm btn-outline" onclick="containerAction(\\'' + escapeHtml(c.runtime) + '\\',\\'' + escapeHtml(c.id) + '\\',\\'logs\\')">' + T.actionLogs + '</button>' +
+        '<button class="btn btn-sm btn-outline" onclick="containerAction(\\'' + escapeHtml(c.runtime) + '\\',\\'' + escapeHtml(c.id) + '\\',\\'inspect\\')">' + T.actionInspect + '</button>' +
+      '</span>';
+    return (
+      '<tr onclick="rowClicked(\\'' + escapeHtml(c.id) + '\\', event)">' +
+        '<td><span class="badge badge-runtime">' + escapeHtml(c.runtime) + '</span></td>' +
+        '<td>' + escapeHtml(c.name) + '</td>' +
+        '<td class="command" title="' + escapeHtml(c.image) + '">' + escapeHtml(c.image) + '</td>' +
+        '<td><span class="badge ' + stateClass + '">' + escapeHtml(c.state) + '</span></td>' +
+        '<td>' + escapeHtml(c.status) + '</td>' +
+        '<td style="text-align:right">' + actions + '</td>' +
+      '</tr>'
+    );
+  }
+
+  function renderLocks() {
+    const list = locks.filter((l) => {
+      if (!filter) return true;
+      const f = filter.toLowerCase();
+      return [l.path, l.pid, l.fd, l.type].join(" ").toLowerCase().includes(f);
+    });
+    list.sort((a, b) => {
+      let cmp = 0;
+      const col = currentSort.col;
+      if (col === "type") cmp = (a.type || "").localeCompare(b.type || "");
+      else if (col === "pid") cmp = (a.pid || 0) - (b.pid || 0);
+      else if (col === "fd") cmp = (a.fd || "").localeCompare(b.fd || "");
+      else if (col === "path") cmp = (a.path || "").localeCompare(b.path || "");
+      else if (col === "inode") cmp = (a.inode || 0) - (b.inode || 0);
+      return currentSort.dir === "asc" ? cmp : -cmp;
+    });
+
+    const tbody = document.getElementById("locksTbody");
+    const empty = document.getElementById("locksEmpty");
+    if (!tbody) return;
+    if (list.length === 0) {
+      tbody.innerHTML = "";
+      empty.style.display = "block";
+      return;
+    }
+    empty.style.display = "none";
+    tbody.innerHTML = list.map(renderLockRow).join("");
+  }
+
+  function renderLockRow(l) {
+    return (
+      '<tr>' +
+        '<td><span class="badge badge-runtime">' + escapeHtml(l.type || "-") + "</span></td>" +
+        "<td>" + (l.pid || "-") + "</td>" +
+        '<td class="pid">' + escapeHtml(l.fd || "-") + "</td>" +
+        '<td class="command" title="' + escapeHtml(l.path || "") + '">' + escapeHtml(l.path || "-") + "</td>" +
+        "<td>" + (l.inode || "-") + "</td>" +
+      "</tr>"
+    );
+  }
+
+  function containerAction(runtime, id, action) {
+    vscode.postMessage({ command: "containerAction", runtime, id, action });
+  }
+
+  function renderContainerDetails(runtime, id, data, error) {
+    openDetails(id, "container");
+    if (error || !data) {
+      elements.detailsBody().innerHTML =
+        '<div class="details-empty">' + escapeHtml(T.detailsNotAvailable) + (error ? " (" + escapeHtml(error) + ")" : "") + "</div>";
+      return;
+    }
+    const mounts = (data.Mounts || []).map((m) => m.Source + " → " + (m.Destination || m.Target || "?")).join("<br>");
+    const networks = Object.keys(data.NetworkSettings?.Networks || {}).join(", ");
+    const env = Object.entries(data.Config?.Env || []).slice(0, 30).map(([k, v]) =>
+      '<tr><td class="env-key">' + escapeHtml(k) + '</td><td class="env-val">' + escapeHtml(v) + "</td></tr>"
+    ).join("");
+    const html =
+      '<div class="details-grid">' +
+        '<div class="details-section details-section-wide">' +
+          '<div class="details-label">Image</div>' +
+          '<div class="details-code">' + escapeHtml(data.Config?.Image || "-") + "</div>" +
+        "</div>" +
+        '<div class="details-section">' +
+          '<div class="details-label">State</div>' +
+          '<div>' + escapeHtml(data.State?.Status || "-") + "</div>" +
+        "</div>" +
+        '<div class="details-section">' +
+          '<div class="details-label">Command</div>' +
+          '<div class="details-code">' + escapeHtml(JSON.stringify(data.Config?.Cmd || [])) + "</div>" +
+        "</div>" +
+        '<div class="details-section details-section-wide">' +
+          '<div class="details-label">Mounts</div>' +
+          '<div class="details-code">' + (mounts || "-") + "</div>" +
+        "</div>" +
+        '<div class="details-section details-section-wide">' +
+          '<div class="details-label">Networks</div>' +
+          '<div>' + escapeHtml(networks || "-") + "</div>" +
+        "</div>" +
+        '<div class="details-section details-section-wide">' +
+          '<div class="details-label">Env (first 30)</div>' +
+          '<table class="env-table"><tbody>' + env + "</tbody></table>" +
+        "</div>" +
+      "</div>";
+    elements.detailsBody().innerHTML = html;
+  }
+
+  function renderContainerOutput(runtime, id, action, output) {
+    openDetails(id, "container");
+    elements.detailsBody().innerHTML =
+      '<div class="details-section details-section-wide">' +
+        '<div class="details-label">' + escapeHtml(action) + ' output for ' + escapeHtml(id) + '</div>' +
+        '<pre class="details-code">' + escapeHtml(output || "(empty)") + '</pre>' +
+      '</div>';
+  }
+
+  function processAction(pid, action, nice) {
+    vscode.postMessage({ command: "processAction", pid, action, nice: nice ? parseInt(nice, 10) : null });
   }
 
   // ─── Auto-refresh ────────────────────────────────────────────────
@@ -188,6 +408,8 @@ module.exports = function getScript(strings = {}) {
       if (!autoRefreshEnabled || document.hidden) return;
       if (currentTab === "ports") vscode.postMessage({ command: "refresh" });
       else if (currentTab === "processes") vscode.postMessage({ command: "refreshProcesses" });
+      else if (currentTab === "containers") vscode.postMessage({ command: "refreshContainers" });
+      else if (currentTab === "locks") vscode.postMessage({ command: "refreshLocks" });
     }, ms);
   }
   document.addEventListener("visibilitychange", () => {
@@ -375,19 +597,37 @@ module.exports = function getScript(strings = {}) {
   }
 
   // ─── Process Details panel ──────────────────────────────────────
-  function rowClicked(port, evt) {
+  function rowClicked(id, evt) {
     // Ignore clicks on inputs/buttons — those have their own handlers.
     if (evt && evt.target && (evt.target.tagName === "BUTTON" || evt.target.tagName === "INPUT")) return;
-    const pid = port; // In our model, rowClicked receives (port_or_pid, evt)
-    openDetails(pid);
+    if (currentTab === "containers") {
+      const c = containers.find((cc) => cc.id === id);
+      if (c) vscode.postMessage({ command: "getContainerDetails", runtime: c.runtime, id });
+    } else {
+      openDetails(id);
+    }
   }
 
-  function openDetails(pid) {
+  function openDetails(pid, kind = "process") {
     detailsPid = pid;
     elements.detailsPanel().style.display = "flex";
     elements.detailsBody().innerHTML =
       '<div class="details-loading">' + escapeHtml(T.detailsLoading) + "</div>";
-    vscode.postMessage({ command: "getProcessDetails", pid });
+    if (kind === "process") {
+      vscode.postMessage({ command: "getProcessDetails", pid });
+    } else if (kind === "container") {
+      const c = containers.find((cc) => cc.id === pid);
+      if (c) vscode.postMessage({ command: "getContainerDetails", runtime: c.runtime, id: pid });
+    }
+  }
+
+  // Wire locks toggle
+  const locksAllOpenEl = document.getElementById("locksAllOpen");
+  if (locksAllOpenEl) {
+    locksAllOpenEl.addEventListener("change", (e) => {
+      locksShowAllOpen = e.target.checked;
+      renderLocks();
+    });
   }
 
   function closeDetails() {
