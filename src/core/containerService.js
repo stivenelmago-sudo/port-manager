@@ -181,18 +181,25 @@ async function inspectContainer(runtime, id) {
 /**
  * Top-level: list containers across ALL installed runtimes in parallel.
  * Best-effort: a failing runtime is skipped silently.
+ * Each runtime is wrapped in a per-call timeout so a stuck daemon doesn't
+ * hang the UI.
  *
  * @returns {Promise<{containers: Array, runtimes: string[]}>}
  */
 async function listContainers() {
   const runtimes = await detectRuntimes();
   const tasks = [];
-  if (runtimes.includes("docker")) tasks.push(listDocker().catch(() => []));
-  if (runtimes.includes("podman")) tasks.push(listPodman().catch(() => []));
-  if (runtimes.includes("nerdctl")) tasks.push(listNerdctl().catch(() => []));
-  if (runtimes.includes("crictl")) tasks.push(listCrictl().catch(() => []));
-  if (runtimes.includes("lxc")) tasks.push(listLxc("lxc").catch(() => []));
-  if (runtimes.includes("incus")) tasks.push(listLxc("incus").catch(() => []));
+  const wrap = (p) =>
+    Promise.race([
+      p.catch(() => []),
+      new Promise((r) => setTimeout(() => r([]), 4000)),
+    ]);
+  if (runtimes.includes("docker")) tasks.push(wrap(listDocker()));
+  if (runtimes.includes("podman")) tasks.push(wrap(listPodman()));
+  if (runtimes.includes("nerdctl")) tasks.push(wrap(listNerdctl()));
+  if (runtimes.includes("crictl")) tasks.push(wrap(listCrictl()));
+  if (runtimes.includes("lxc")) tasks.push(wrap(listLxc("lxc")));
+  if (runtimes.includes("incus")) tasks.push(wrap(listLxc("incus")));
 
   const results = await Promise.all(tasks);
   const containers = results.flat();

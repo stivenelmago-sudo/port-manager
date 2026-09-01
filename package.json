@@ -156,7 +156,7 @@
   "scripts": {
     "lint": "node --check src/extension.js && for f in $(find src -name '*.js' -type f); do node --check \"$f\"; done",
     "validate": "node scripts/validate.js",
-    "test": "node scripts/smoke-test.js && node scripts/activation-test.js && node scripts/nls-resolution-test.js && node scripts/witr-smoke-test.js && node scripts/witr-functional-test.js",
+    "test": "node scripts/smoke-test.js && node scripts/activation-test.js && node scripts/nls-resolution-test.js && node scripts/witr-smoke-test.js && node scripts/witr-functional-test.js && node scripts/containers-locks-test.js",
     "manual-install": "node scripts/manual-install-test.js",
     "build": "npm run lint && npm run validate && npm test && vsce package --no-dependencies",
     "package": "vsce package",
