@@ -124,6 +124,18 @@ const BIN = path.resolve(__dirname, "..", "resources", "bin", "witr-linux-amd64"
     check("script.js parses as valid JavaScript", false, `(error: ${e.message})`);
   }
 
+  // 9. Exit code 4 (ambiguous match) must NOT discard valid enrichment for
+  //    OTHER ports in the same batch. Previously exit 4 caused the whole
+  //    batch to be treated as a failure and the table rendered blank.
+  console.log("\n9. Partial success on ambiguous match (exit code 4):");
+  runner.cacheClear();
+  const ambiguous = await runner.lookupPortsBatch(BIN, [22, 9000]);
+  check("ambiguous lookup returns map with 2 entries", ambiguous.size === 2);
+  check("ambiguous port returns null (clean fallback)",
+    ambiguous.get(9000) === null);
+  check("non-ambiguous port still gets enriched",
+    ambiguous.get(22) && ambiguous.get(22).chain);
+
   console.log("");
   if (failed === 0) {
     console.log("✓ ALL WITR FUNCTIONALITY VERIFIED");

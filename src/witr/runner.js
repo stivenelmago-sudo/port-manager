@@ -147,7 +147,13 @@ async function run(bin, args) {
         return;
       }
 
-      if (exitCode !== 0 && exitCode !== 1 && exitCode !== 2) {
+      // Exit codes 0 (clean), 1 (warnings), 2 (not found) and 4 (invalid input /
+      // ambiguous match) may still have produced valid output for OTHER ports in
+      // a batch invocation. Only 5 (internal error) and other unexpected codes
+      // are hard failures — and even those should fall back to "no enrichment"
+      // rather than discard partial results.
+      const isHardFail = exitCode >= 5;
+      if (isHardFail) {
         settle({
           ok: false,
           code: exitCode,
@@ -197,6 +203,15 @@ async function lookupPort(bin, port) {
 function parseShortLine(line) {
   const trimmed = String(line || "").trim();
   if (!trimmed) return null;
+
+  // WITR emits a "Multiple matching processes found:" block (with pid list and
+  // "Re-run with witr --pid ...") when a query is ambiguous. That's not an
+  // ancestry chain — return null so the UI falls back to "—" instead of showing
+  // a confusing prompt.
+  if (/Multiple matching/i.test(trimmed) || /Re-run with:/i.test(trimmed)) {
+    return null;
+  }
+
   const chain = trimmed.split("→").map((s) => s.trim()).filter(Boolean);
   const ancestry = chain.map((segment) => {
     const m = segment.match(/^(.*?)\s*\(pid\s+(\d+)\)\s*$/i);
