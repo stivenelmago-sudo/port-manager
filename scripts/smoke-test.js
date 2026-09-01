@@ -63,5 +63,8 @@ console.log('registerCommands:', typeof registerCommands === 'function');
 const { getWebviewContent } = require('../src/webview');
 const html = getWebviewContent(i18n.getWebviewStrings());
 console.log('HTML length:', html.length, 'hasPortManagerRef:', html.includes('Port'), 'hasRtl:', html.includes('dir="rtl"'));
+console.log('Has lang select:', html.includes('id="langSelect"'));
+const selectMatch = html.match(/<select[^>]*id="langSelect"[^>]*>[\s\S]*?<\/select>/);
+if (selectMatch) console.log('Select HTML:', selectMatch[0].replace(/\s+/g, ' '));
 
 console.log('\n✓ All modules load and function correctly');

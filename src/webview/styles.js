@@ -87,6 +87,13 @@ module.exports = function getStyles() {
   }
 
   .btn-outline:hover { background: var(--hover); }
+
+  .lang-select {
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-left: auto;
+  }
   .btn-sm { padding: 3px 8px; font-size: 11px; }
 
   /* Stats */

@@ -35,6 +35,7 @@ module.exports = {
     KILL: "kill",
     BULK_KILL: "bulkKill",
     SCAN: "scan",
+    SET_LANGUAGE: "setLanguage",
   },
 
   // Port states

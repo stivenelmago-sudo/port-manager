@@ -9,7 +9,7 @@
 const Module = require("module");
 const path = require("path");
 
-const EXT_PATH = "/tmp/manual-install/extensions/port-manager-saiki.port-manager-1.1.0/extension";
+const EXT_PATH = "/tmp/manual-install/extensions/port-manager-saiki.portpilot-1.1.0/extension";
 
 console.log("╔══════════════════════════════════════════════════════╗");
 console.log("║  Manual installation verification                   ║");

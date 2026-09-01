@@ -2,10 +2,11 @@
  * PortPilot - Webview Provider
  */
 
+const vscode = require("vscode");
 const { getWebviewContent } = require("../webview");
 const { getListeningPorts, killByPid } = require("../core/portService");
 const { MESSAGE_TYPE, COMMAND } = require("../core/constants");
-const { getWebviewStrings, tr, t } = require("../i18n");
+const i18n = require("../i18n");
 
 /**
  * Create the webview provider for the sidebar panel
@@ -15,7 +16,7 @@ function createWebviewProvider() {
   return {
     resolveWebviewView(webviewView) {
       webviewView.webview.options = { enableScripts: true };
-      webviewView.webview.html = getWebviewContent(getWebviewStrings());
+      webviewView.webview.html = getWebviewContent(i18n.getWebviewStrings());
 
       webviewView.webview.onDidReceiveMessage((msg) => {
         handleMessage(msg, webviewView.webview);
@@ -46,7 +47,28 @@ function handleMessage(msg, webview) {
     case COMMAND.SCAN:
       handleScan(msg, webview);
       break;
+
+    case COMMAND.SET_LANGUAGE:
+      handleSetLanguage(msg.lang);
+      break;
   }
+}
+
+/**
+ * Set the UI language from the webview dropdown
+ * @param {string} lang
+ */
+async function handleSetLanguage(lang) {
+  if (!lang || !i18n.SUPPORTED.includes(lang)) return;
+  try {
+    await vscode.workspace
+      .getConfiguration()
+      .update("portManager.language", lang, vscode.ConfigurationTarget.Global);
+  } catch {
+    // Configuration target may be unavailable in some contexts
+  }
+  i18n.setLanguage(lang);
+  await vscode.commands.executeCommand("workbench.action.reloadWindow");
 }
 
 /**

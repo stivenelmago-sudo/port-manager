@@ -57,6 +57,7 @@ const MESSAGES = {
       toastKillFailed: (msg) => `Kill failed: ${msg}`,
       toastScan: (used, free) => `Used: ${used} / Free: ${free}`,
       bulkKilledLabel: (n) => `${n} ports`,
+      langMenu: "🌐 Language",
     },
   },
   es: {
@@ -112,6 +113,7 @@ const MESSAGES = {
       toastKillFailed: (msg) => `Error al cerrar: ${msg}`,
       toastScan: (used, free) => `En uso: ${used} / Libres: ${free}`,
       bulkKilledLabel: (n) => `${n} puertos`,
+      langMenu: "🌐 Idioma",
     },
   },
   zh: {
@@ -167,6 +169,7 @@ const MESSAGES = {
       toastKillFailed: (msg) => `Kill failed: ${msg}`,
       toastScan: (used, free) => `Used: ${used} / Free: ${free}`,
       bulkKilledLabel: (n) => `${n} ports`,
+      langMenu: "🌐 语言",
     },
   },
   hi: {
@@ -222,6 +225,7 @@ const MESSAGES = {
       toastKillFailed: (msg) => `बंद करने में विफल: ${msg}`,
       toastScan: (used, free) => `उपयोग: ${used} / खाली: ${free}`,
       bulkKilledLabel: (n) => `${n} पोर्ट`,
+      langMenu: "🌐 भाषा",
     },
   },
   ar: {
@@ -277,6 +281,7 @@ const MESSAGES = {
       toastKillFailed: (msg) => `فشل الإغلاق: ${msg}`,
       toastScan: (used, free) => `قيد الاستخدام: ${used} / متاح: ${free}`,
       bulkKilledLabel: (n) => `${n} منافذ`,
+      langMenu: "🌐 اللغة",
     },
   },
   ja: {
@@ -332,6 +337,7 @@ const MESSAGES = {
       toastKillFailed: (msg) => `終了失敗: ${msg}`,
       toastScan: (used, free) => `使用中: ${used} / 空き: ${free}`,
       bulkKilledLabel: (n) => `${n}個のポート`,
+      langMenu: "🌐 言語",
     },
   },
 };

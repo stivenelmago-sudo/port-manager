@@ -95,6 +95,17 @@ function getWebviewStrings() {
   for (const k of Object.keys(w)) {
     out[k] = typeof w[k] === "function" ? null : w[k];
   }
+  out._supported = SUPPORTED.map(code => ({
+    code,
+    label: {
+      en: "English",
+      es: "Español",
+      zh: "中文",
+      hi: "हिन्दी",
+      ar: "العربية",
+      ja: "日本語",
+    }[code],
+  }));
   return out;
 }
 

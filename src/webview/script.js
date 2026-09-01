@@ -271,6 +271,11 @@ module.exports = function getScript(strings = {}) {
     vscode.postMessage({ command: "scan", from, to });
   }
 
+  function changeLang(lang) {
+    if (!lang) return;
+    vscode.postMessage({ command: "setLanguage", lang });
+  }
+
   function showToast(msg, type) {
     const container = elements.toastContainer();
     const el = document.createElement("div");
