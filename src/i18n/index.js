@@ -4,7 +4,7 @@
  * Idiomas soportados:
  *   - en: English
  *   - es: Español
- *   - zh: 中文 (Chino mandarín)
+ *   - zh: Chinese (Mandarin)
  *   - hi: हिन्दी (Hindi)
  *   - ar: العربية (Árabe)
  *   - ja: 日本語 (Japonés - por compatibilidad)

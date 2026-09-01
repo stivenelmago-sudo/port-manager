@@ -60,7 +60,7 @@ UI is available in **6 languages**:
 |----------|------|
 | 🇺🇸 English | `en` |
 | 🇪🇸 Español | `es` |
-| 🇨🇳 中文 | `zh` |
+| 🇨🇳 Chinese | `zh` |
 | 🇮🇳 हिन्दी | `hi` |
 | 🇸🇦 العربية | `ar` (RTL) |
 | 🇯🇵 日本語 | `ja` |
@@ -90,7 +90,7 @@ The extension automatically follows your VS Code display language. To override, 
 
 ### 1.1.0
 
-- Multi-language UI (English, Español, 中文, हिन्दी, العربية, 日本語)
+- Multi-language UI (English, Español, Chinese, हिन्दी, العربية, 日本語)
 - Auto-detect VS Code display language + manual override
 - RTL layout for Arabic
 - Fixed misleading "Free" stats counter

@@ -5,7 +5,7 @@ All notable changes to the "Port Manager" extension will be documented in this f
 ## [1.1.0] - 2026-09-01
 
 ### Added
-- **Multi-language support**: UI available in English, Español, 中文, हिन्दी, العربية, 日本語
+- **Multi-language support**: UI available in English, Español, Chinese, हिन्दी, العربية, 日本語
 - Automatic language detection from VS Code display language
 - Manual language override via `portManager.language` setting
 - New command `Port Manager: Set Language`
