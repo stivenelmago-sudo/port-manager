@@ -52,6 +52,21 @@ Three commands accessible via `Ctrl+Shift+P` / `Cmd+Shift+P`:
 
 Automatically adapts to your VS Code theme — dark, light, or high contrast.
 
+### 🌐 Multi-language Support
+
+UI is available in **6 languages**:
+
+| Language | Code |
+|----------|------|
+| 🇺🇸 English | `en` |
+| 🇪🇸 Español | `es` |
+| 🇨🇳 中文 | `zh` |
+| 🇮🇳 हिन्दी | `hi` |
+| 🇸🇦 العربية | `ar` (RTL) |
+| 🇯🇵 日本語 | `ja` |
+
+The extension automatically follows your VS Code display language. To override, run **Port Manager: Set Language** from the command palette, or set `portManager.language` in your settings.
+
 ## Supported Platforms
 
 | Platform | Port Detection | Process Kill |
@@ -73,6 +88,13 @@ Automatically adapts to your VS Code theme — dark, light, or high contrast.
 
 ## Release Notes
 
+### 1.1.0
+
+- Multi-language UI (English, Español, 中文, हिन्दी, العربية, 日本語)
+- Auto-detect VS Code display language + manual override
+- RTL layout for Arabic
+- Fixed misleading "Free" stats counter
+
 ### 1.0.0
 
 - Initial release
@@ -93,6 +115,7 @@ src/
 ├── portService.js     # Port detection & management
 ├── commands.js        # VS Code commands
 ├── webviewProvider.js # Webview handler
+├── i18n.js            # Internationalization (6 languages)
 └── webview/
     ├── index.js       # HTML generator
     ├── styles.js      # CSS

@@ -33,6 +33,15 @@ function activate(context) {
     })
   );
 
+  // React to manual configuration changes
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration("portManager.language")) {
+        i18n.setLanguage(i18n.detectLanguage());
+      }
+    })
+  );
+
   // Optional: manual language override command
   context.subscriptions.push(
     vscode.commands.registerCommand("portManager.setLanguage", async () => {

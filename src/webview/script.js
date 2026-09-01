@@ -5,7 +5,6 @@
 module.exports = function getScript(strings = {}) {
   const s = JSON.stringify({
     statsUsed: strings.statsUsed || "Used",
-    statsFree: strings.statsFree || "Free",
     statsTotal: strings.statsTotal || "Total",
     colPort: strings.colPort || "Port",
     colState: strings.colState || "State",
@@ -116,12 +115,11 @@ module.exports = function getScript(strings = {}) {
 
   function renderStats() {
     const listenCount = ports.filter((p) => p.state === "LISTEN").length;
-    const freeCount = ports.filter((p) => p.state === "FREE").length;
+    const total = ports.length;
 
     elements.stats().innerHTML =
       '<span><span class="dot" style="background:#FF5252"></span> ' + T.statsUsed + " " + listenCount + "</span>" +
-      '<span><span class="dot" style="background:#00E676"></span> ' + T.statsFree + " " + freeCount + "</span>" +
-      "<span>" + T.statsTotal + " " + ports.length + "</span>";
+      "<span>" + T.statsTotal + " " + total + "</span>";
   }
 
   function renderTable(list) {

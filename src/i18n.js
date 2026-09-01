@@ -423,7 +423,7 @@ function tr(dotted, ...args) {
 function getWebviewStrings() {
   const w = (MESSAGES[currentLang] && MESSAGES[currentLang].webview) ||
             MESSAGES[DEFAULT_LANG].webview;
-  const out = {};
+  const out = { _lang: currentLang };
   for (const k of Object.keys(w)) {
     out[k] = typeof w[k] === "function" ? null : w[k];
   }

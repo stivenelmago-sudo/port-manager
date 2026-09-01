@@ -42,8 +42,10 @@ function getWebviewContent(strings = {}) {
     cancel: "Cancel",
   }, strings);
 
+  const dir = strings._lang === "ar" ? "rtl" : "ltr";
+
   return /*html*/ `<!DOCTYPE html>
-<html lang="en">
+<html lang="${escape(strings._lang || "en")}" dir="${dir}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
