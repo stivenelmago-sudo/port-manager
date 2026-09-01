@@ -6,5 +6,8 @@
   "cmd.checkPort": "PortPilot: ポートの空き状況を確認",
   "cmd.killPort": "PortPilot: ポートを終了",
   "cmd.setLanguage": "PortPilot: 言語を設定",
-  "config.language.description": "UI言語を上書き(auto = VS Codeの表示言語に従う)"
+  "config.language.description": "UI言語を上書き(auto = VS Codeの表示言語に従う)",
+  "setLanguage.prompt": "言語を選択",
+  "setLanguage.current": "現在",
+  "setLanguage.changed": "言語: {0} (ウィンドウを再読み込み)"
 }

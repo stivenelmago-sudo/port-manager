@@ -6,5 +6,8 @@
   "cmd.checkPort": "PortPilot: Check Port Availability",
   "cmd.killPort": "PortPilot: Kill Port",
   "cmd.setLanguage": "PortPilot: Set Language",
-  "config.language.description": "Override the UI language (auto = follow VS Code display language)"
+  "config.language.description": "Override the UI language (auto = follow VS Code display language)",
+  "setLanguage.prompt": "Select language",
+  "setLanguage.current": "current",
+  "setLanguage.changed": "Language: {0} (reload window)"
 }

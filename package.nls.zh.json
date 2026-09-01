@@ -1,10 +1,13 @@
 {
   "ext.displayName": "PortPilot",
-  "ext.description": "View listening ports, check availability, and kill processes — all inside VS Code. Supports macOS, Windows, and Linux.",
-  "view.title": "Ports",
-  "cmd.show": "PortPilot: Show Listening Ports",
-  "cmd.checkPort": "PortPilot: Check Port Availability",
-  "cmd.killPort": "PortPilot: Kill Port",
-  "cmd.setLanguage": "PortPilot: Set Language",
-  "config.language.description": "Override UI language (auto = follow VS Code display language)"
+  "ext.description": "查看监听端口、检查可用性并终止进程 — 全部在 VS Code 内完成。支持 macOS、Windows 和 Linux。",
+  "view.title": "端口",
+  "cmd.show": "PortPilot: 显示监听端口",
+  "cmd.checkPort": "PortPilot: 检查端口可用性",
+  "cmd.killPort": "PortPilot: 关闭端口",
+  "cmd.setLanguage": "PortPilot: 设置语言",
+  "config.language.description": "覆盖界面语言(自动 = 跟随 VS Code 显示语言)",
+  "setLanguage.prompt": "选择语言",
+  "setLanguage.current": "当前",
+  "setLanguage.changed": "语言: {0} (重新加载窗口)"
 }

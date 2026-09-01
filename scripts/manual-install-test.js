@@ -25,6 +25,7 @@ let configLanguage = ""; // empty = auto-detect
 let vscodeLocale = "en"; // simulate VS Code's display language
 
 const vscodeMock = {
+  ConfigurationTarget: { Global: 1, Workspace: 2, WorkspaceFolder: 3 },
   env: {
     get language() { return vscodeLocale; },
   },
