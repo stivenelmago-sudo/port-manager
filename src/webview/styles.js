@@ -34,6 +34,60 @@ module.exports = function getStyles() {
     padding: 0;
   }
 
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 11;
+  }
+  .tab {
+    padding: 8px 14px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--fg);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    opacity: 0.7;
+    transition: opacity 0.15s, border-color 0.15s;
+  }
+  .tab:hover { opacity: 1; }
+  .tab-active {
+    opacity: 1;
+    border-bottom-color: var(--accent);
+    font-weight: 600;
+  }
+  .tab-refresh {
+    margin-left: auto;
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    color: var(--fg);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.7;
+  }
+  .tab-refresh:hover { opacity: 1; }
+  .tab-refresh.auto-off .dot { background: var(--vscode-disabledForeground, #666); }
+  .dot-pulse {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; transform: scale(0.85); }
+    50% { opacity: 1; transform: scale(1); }
+  }
+
   /* Toolbar */
   .toolbar {
     display: flex;
@@ -43,7 +97,7 @@ module.exports = function getStyles() {
     align-items: center;
     flex-wrap: wrap;
     position: sticky;
-    top: 0;
+    top: 36px;
     background: var(--bg);
     z-index: 10;
   }
@@ -280,5 +334,138 @@ module.exports = function getStyles() {
     color: var(--vscode-textLink-foreground, #4ec9b0);
     font-weight: 500;
   }
+
+  /* Process details panel (slide-in from bottom) */
+  .details-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 60vh;
+    background: var(--vscode-editorWidget-background, var(--bg));
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    z-index: 20;
+  }
+  .details-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--header-bg);
+  }
+  .details-title {
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .details-close {
+    background: transparent;
+    border: none;
+    color: var(--fg);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 0 6px;
+    opacity: 0.7;
+  }
+  .details-close:hover { opacity: 1; }
+  .details-body {
+    overflow-y: auto;
+    padding: 12px;
+    flex: 1;
+  }
+  .details-empty, .details-loading {
+    text-align: center;
+    padding: 32px 16px;
+    opacity: 0.6;
+    font-size: 12px;
+  }
+  .details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .details-section { display: flex; flex-direction: column; gap: 4px; }
+  .details-section-wide { grid-column: 1 / -1; }
+  .details-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.6;
+    font-weight: 600;
+  }
+  .details-code {
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 11px;
+    padding: 4px 6px;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 3px;
+    word-break: break-all;
+    overflow-wrap: anywhere;
+  }
+  .tree { list-style: none; padding-left: 16px; }
+  .tree li {
+    position: relative;
+    padding: 2px 0;
+  }
+  .tree li::before {
+    content: "└─";
+    position: absolute;
+    left: -14px;
+    opacity: 0.4;
+  }
+  .tree-node {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .tree-name { font-weight: 500; }
+  .tree-pid { font-size: 10px; opacity: 0.5; font-family: monospace; }
+  .env-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 11px;
+  }
+  .env-table td {
+    padding: 3px 6px;
+    border-bottom: 1px solid var(--border);
+    word-break: break-all;
+  }
+  .env-key { width: 30%; opacity: 0.7; }
+  .env-val { font-family: inherit; }
+  .sockets {
+    list-style: none;
+    padding: 0;
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 11px;
+  }
+  .sockets li {
+    padding: 2px 0;
+    display: flex;
+    gap: 8px;
+  }
+  .socket-state { opacity: 0.6; }
+
+  /* Processes tab — command column */
+  .command {
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 11px;
+    opacity: 0.85;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 280px;
+  }
+  .cpu, .memory {
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 11px;
+    text-align: right;
+  }
+  tr { cursor: pointer; }
 `;
 };

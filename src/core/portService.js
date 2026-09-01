@@ -210,7 +210,8 @@ function getPidToNameMap() {
 }
 
 /**
- * Kill a process by PID
+ * Kill a process by PID — legacy `kill -9` / `taskkill /F` synchronous kill.
+ * Used by the bulk kill path where latency matters.
  * @param {number} pid - Process ID to kill
  * @throws {Error} If kill fails
  */
@@ -219,6 +220,61 @@ function killByPid(pid) {
     PLATFORM === "win32" ? `taskkill /F /PID ${pid}` : `kill -9 ${pid}`;
 
   execSync(command, { timeout: TIMEOUT.KILL });
+}
+
+/**
+ * Graceful kill: SIGTERM first, escalating to SIGKILL after `graceMs` if the
+ * process is still alive. Windows falls back to `taskkill` (no POSIX signals).
+ *
+ * @param {number} pid
+ * @param {number} [graceMs=3000]
+ * @returns {Promise<{signal:"SIGTERM"|"SIGKILL"|"taskkill", escalated:boolean, alive:boolean}>}
+ */
+async function killGraceful(pid, graceMs = 3000) {
+  if (!pid) throw new Error("pid required");
+
+  const isAlive = (p) => {
+    try {
+      process.kill(p, 0); // signal 0 = existence check
+      return true;
+    } catch (e) {
+      return e.code === "EPERM"; // exists but no permission
+    }
+  };
+
+  if (PLATFORM === "win32") {
+    execSync(`taskkill /PID ${pid}`, { timeout: TIMEOUT.KILL });
+    return { signal: "taskkill", escalated: false, alive: !isAlive(pid) };
+  }
+
+  // POSIX: SIGTERM, wait, escalate.
+  try {
+    process.kill(pid, "SIGTERM");
+  } catch (e) {
+    if (e.code === "ESRCH") return { signal: "SIGTERM", escalated: false, alive: false };
+    throw e;
+  }
+
+  const deadline = Date.now() + graceMs;
+  while (Date.now() < deadline) {
+    if (!isAlive(pid)) {
+      return { signal: "SIGTERM", escalated: false, alive: false };
+    }
+    await new Promise((r) => setTimeout(r, 100));
+  }
+
+  // Still alive — escalate.
+  if (isAlive(pid)) {
+    try {
+      process.kill(pid, "SIGKILL");
+      return { signal: "SIGKILL", escalated: true, alive: false };
+    } catch (e) {
+      if (e.code === "ESRCH") return { signal: "SIGTERM", escalated: true, alive: false };
+      throw e;
+    }
+  }
+
+  return { signal: "SIGTERM", escalated: false, alive: false };
 }
 
 /**
@@ -253,5 +309,6 @@ module.exports = {
   getListeningPorts,
   getListeningPortsEnriched,
   killByPid,
+  killGraceful,
   checkPortFree,
 };

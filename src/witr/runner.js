@@ -197,6 +197,34 @@ async function lookupPort(bin, port) {
 }
 
 /**
+ * Get full details for a single process by PID using `witr --pid N --json`.
+ * Returns the parsed JSON object from WITR (process, ancestry, env, cwd,
+ * sockets, source, etc.) or null on failure.
+ *
+ * @param {string} bin - absolute path to witr binary
+ * @param {number} pid
+ * @returns {Promise<object|null>}
+ */
+async function getProcessDetails(bin, pid) {
+  if (!bin || !pid) return null;
+  const res = await run(bin, ["--pid", String(pid), "--json"]);
+  if (!res.ok || !res.data) return null;
+  return res.data;
+}
+
+/**
+ * List all processes via `witr --json` (no arguments). NOTE: in WITR v0.3.3
+ * this opens an interactive TUI rather than emitting JSON, so this helper
+ * returns an empty array. The Processes tab uses port-derived data instead.
+ *
+ * @param {string} bin - absolute path to witr binary
+ * @returns {Promise<Array>}
+ */
+async function listProcesses(_bin) {
+  return [];
+}
+
+/**
  * Parse the one-line `--short` output. Format example (from README):
  *   systemd (pid 1) → PM2 v5.3.1: God (pid 1481580) → python (pid 1482060)
  */
@@ -314,6 +342,8 @@ module.exports = {
   run,
   lookupPort,
   lookupPortsBatch,
+  getProcessDetails,
+  listProcesses,
   parseShortLine,
   cacheClear,
   CACHE_TTL_MS,

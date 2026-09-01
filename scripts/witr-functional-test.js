@@ -136,6 +136,23 @@ const BIN = path.resolve(__dirname, "..", "resources", "bin", "witr-linux-amd64"
   check("non-ambiguous port still gets enriched",
     ambiguous.get(22) && ambiguous.get(22).chain);
 
+  // 10. getProcessDetails() returns full JSON for a valid PID.
+  console.log("\n10. getProcessDetails (single PID, --json):");
+  const details = await runner.getProcessDetails(BIN, 1);
+  check("getProcessDetails returns an object", typeof details === "object" && details !== null);
+  check("details has nested Process block",
+    details && details.Process && details.Process.PID === 1,
+    `(PID=${details?.Process?.PID})`);
+  check("details has Ancestry array",
+    Array.isArray(details?.Ancestry) && details.Ancestry.length > 0,
+    `(ancestry length=${details?.Ancestry?.length})`);
+
+  // 11. listProcesses() returns empty array (WITR opens TUI without args).
+  console.log("\n11. listProcesses (no args, returns []):");
+  const procList = await runner.listProcesses(BIN);
+  check("listProcesses returns an array", Array.isArray(procList));
+  check("listProcesses is empty (TUI not JSON)", procList.length === 0);
+
   console.log("");
   if (failed === 0) {
     console.log("✓ ALL WITR FUNCTIONALITY VERIFIED");
