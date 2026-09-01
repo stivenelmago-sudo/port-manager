@@ -6,7 +6,7 @@
  */
 
 const vscode = require("vscode");
-const { createWebviewProvider } = require("./webviewProvider");
+const { createWebviewProvider } = require("./providers/webviewProvider");
 const { registerCommands } = require("./commands");
 const i18n = require("./i18n");
 

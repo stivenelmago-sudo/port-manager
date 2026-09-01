@@ -2,10 +2,10 @@
  * Port Manager - Webview Provider
  */
 
-const { getWebviewContent } = require("./webview");
-const { getListeningPorts, killByPid } = require("./portService");
-const { MESSAGE_TYPE, COMMAND } = require("./constants");
-const { getWebviewStrings, tr, t } = require("./i18n");
+const { getWebviewContent } = require("../webview");
+const { getListeningPorts, killByPid } = require("../core/portService");
+const { MESSAGE_TYPE, COMMAND } = require("../core/constants");
+const { getWebviewStrings, tr, t } = require("../i18n");
 
 /**
  * Create the webview provider for the sidebar panel

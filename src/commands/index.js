@@ -3,9 +3,9 @@
  */
 
 const vscode = require("vscode");
-const { getListeningPorts, killByPid, checkPortFree } = require("./portService");
-const { PORT } = require("./constants");
-const { t } = require("./i18n");
+const { getListeningPorts, killByPid, checkPortFree } = require("../core/portService");
+const { PORT } = require("../core/constants");
+const { t } = require("../i18n");
 
 /**
  * Register all extension commands

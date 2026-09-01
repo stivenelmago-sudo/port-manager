@@ -110,16 +110,21 @@ The extension automatically follows your VS Code display language. To override, 
 
 ```
 src/
-├── extension.js       # Entry point
-├── constants.js       # Constants
-├── portService.js     # Port detection & management
-├── commands.js        # VS Code commands
-├── webviewProvider.js # Webview handler
-├── i18n.js            # Internationalization (6 languages)
+├── extension.js          # Entry point
+├── core/
+│   ├── constants.js      # Constants
+│   └── portService.js    # Port detection & management
+├── commands/
+│   └── index.js          # VS Code commands
+├── providers/
+│   └── webviewProvider.js # Webview handler
+├── i18n/
+│   ├── index.js          # i18n API (detect, t, tr)
+│   └── messages.js       # Translation dictionary (6 languages)
 └── webview/
-    ├── index.js       # HTML generator
-    ├── styles.js      # CSS
-    └── script.js      # Client-side JS
+    ├── index.js          # HTML generator
+    ├── styles.js         # CSS
+    └── script.js         # Client-side JS
 ```
 
 ### Publishing to VS Code Marketplace
