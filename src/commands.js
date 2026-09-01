@@ -5,6 +5,7 @@
 const vscode = require("vscode");
 const { getListeningPorts, killByPid, checkPortFree } = require("./portService");
 const { PORT } = require("./constants");
+const { t } = require("./i18n");
 
 /**
  * Register all extension commands
@@ -25,7 +26,7 @@ async function showPortsCommand() {
   const ports = getListeningPorts();
 
   if (ports.length === 0) {
-    vscode.window.showInformationMessage("使用中のポートはありません");
+    vscode.window.showInformationMessage(t("noPorts"));
     return;
   }
 
@@ -38,18 +39,18 @@ async function showPortsCommand() {
   }));
 
   const picked = await vscode.window.showQuickPick(items, {
-    placeHolder: "使用中のポート一覧 — 選択してKILL",
+    placeHolder: t("quickPickPlaceholder"),
   });
 
   if (!picked) return;
 
   const confirm = await vscode.window.showWarningMessage(
-    `ポート :${picked.port} (${picked.process}) を終了しますか？`,
+    t("killConfirm", picked.port, picked.process),
     { modal: true },
-    "KILL"
+    t("killButton")
   );
 
-  if (confirm === "KILL") {
+  if (confirm === t("killButton")) {
     await killProcess(picked.pid, picked.port);
   }
 }
@@ -59,8 +60,8 @@ async function showPortsCommand() {
  */
 async function checkPortCommand() {
   const input = await vscode.window.showInputBox({
-    prompt: "確認するポート番号を入力",
-    placeHolder: "例: 3000",
+    prompt: t("inputPromptCheck"),
+    placeHolder: t("inputPlaceholderCheck"),
     validateInput: validatePortNumber,
   });
 
@@ -70,7 +71,7 @@ async function checkPortCommand() {
   const free = await checkPortFree(port);
 
   if (free) {
-    vscode.window.showInformationMessage(`ポート :${port} は空いています`);
+    vscode.window.showInformationMessage(t("portFree", port));
     return;
   }
 
@@ -79,11 +80,11 @@ async function checkPortCommand() {
   const detail = found ? ` (${found.process}, PID: ${found.pid})` : "";
 
   const action = await vscode.window.showWarningMessage(
-    `ポート :${port} は使用中です${detail}`,
-    "KILL"
+    t("portUsed", port, detail),
+    t("killButton")
   );
 
-  if (action === "KILL" && found) {
+  if (action === t("killButton") && found) {
     await killProcess(found.pid, port);
   }
 }
@@ -93,8 +94,8 @@ async function checkPortCommand() {
  */
 async function killPortCommand() {
   const input = await vscode.window.showInputBox({
-    prompt: "閉じるポート番号を入力 (カンマ区切りで複数可)",
-    placeHolder: "例: 3000 または 3000,8080,5432",
+    prompt: t("inputPromptKill"),
+    placeHolder: t("inputPlaceholderKill"),
   });
 
   if (!input) return;
@@ -103,32 +104,32 @@ async function killPortCommand() {
   const targets = parsePortInput(input, ports);
 
   if (targets.length === 0) {
-    vscode.window.showWarningMessage("該当するポートが見つかりません");
+    vscode.window.showWarningMessage(t("noMatchingPorts"));
     return;
   }
 
   const desc = targets.map((t) => `:${t.port} (${t.process})`).join(", ");
   const confirm = await vscode.window.showWarningMessage(
-    `${targets.length} 個のポートを終了: ${desc}`,
+    t("bulkKillConfirm", targets.length, desc),
     { modal: true },
-    "KILL"
+    t("killButton")
   );
 
-  if (confirm !== "KILL") return;
+  if (confirm !== t("killButton")) return;
 
   let ok = 0;
   let fail = 0;
 
-  for (const t of targets) {
+  for (const tgt of targets) {
     try {
-      killByPid(t.pid);
+      killByPid(tgt.pid);
       ok++;
     } catch {
       fail++;
     }
   }
 
-  vscode.window.showInformationMessage(`完了: 成功 ${ok} / 失敗 ${fail}`);
+  vscode.window.showInformationMessage(t("bulkKillResult", ok, fail));
 }
 
 /**
@@ -139,9 +140,9 @@ async function killPortCommand() {
 async function killProcess(pid, port) {
   try {
     killByPid(pid);
-    vscode.window.showInformationMessage(`ポート :${port} を終了しました`);
+    vscode.window.showInformationMessage(t("killed", port));
   } catch (e) {
-    vscode.window.showErrorMessage(`終了失敗: ${e.message}`);
+    vscode.window.showErrorMessage(t("killFailed", e.message));
   }
 }
 
@@ -153,7 +154,7 @@ async function killProcess(pid, port) {
 function validatePortNumber(value) {
   const n = parseInt(value, 10);
   if (!n || n < PORT.MIN || n > PORT.MAX) {
-    return `${PORT.MIN}-${PORT.MAX} の範囲で入力してください`;
+    return t("validateRange", PORT.MIN, PORT.MAX);
   }
   return null;
 }

@@ -5,6 +5,7 @@
 const { getWebviewContent } = require("./webview");
 const { getListeningPorts, killByPid } = require("./portService");
 const { MESSAGE_TYPE, COMMAND } = require("./constants");
+const { getWebviewStrings, tr, t } = require("./i18n");
 
 /**
  * Create the webview provider for the sidebar panel
@@ -14,7 +15,7 @@ function createWebviewProvider() {
   return {
     resolveWebviewView(webviewView) {
       webviewView.webview.options = { enableScripts: true };
-      webviewView.webview.html = getWebviewContent();
+      webviewView.webview.html = getWebviewContent(getWebviewStrings());
 
       webviewView.webview.onDidReceiveMessage((msg) => {
         handleMessage(msg, webviewView.webview);
@@ -100,7 +101,7 @@ function handleBulkKill(msg, webview) {
 
   webview.postMessage({
     type: MESSAGE_TYPE.KILLED,
-    port: `${killed}個のポート`,
+    port: t("webview.bulkKilledLabel", killed),
   });
 }
 

@@ -1,7 +1,7 @@
 {
   "name": "port-manager",
-  "displayName": "Port Manager",
-  "description": "View listening ports, check availability, and kill processes — all inside VS Code. Works on macOS, Windows, and Linux.",
+  "displayName": "%ext.displayName%",
+  "description": "%ext.description%",
   "version": "1.0.0",
   "publisher": "port-manager-saiki",
   "author": {
@@ -35,31 +35,62 @@
     "tcp",
     "server",
     "debug",
-    "devtools"
+    "devtools",
+    "i18n"
   ],
   "activationEvents": [],
   "main": "./src/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "Port Manager",
+      "properties": {
+        "portManager.language": {
+          "type": "string",
+          "enum": [
+            "en",
+            "es",
+            "zh",
+            "hi",
+            "ar",
+            "ja"
+          ],
+          "default": "",
+          "description": "%config.language.description%",
+          "enumDescriptions": [
+            "English",
+            "Español",
+            "中文",
+            "हिन्दी",
+            "العربية",
+            "日本語"
+          ]
+        }
+      }
+    },
     "commands": [
       {
         "command": "portManager.show",
-        "title": "Port Manager: Show Listening Ports",
+        "title": "%cmd.show%",
         "icon": "$(list-unordered)"
       },
       {
         "command": "portManager.checkPort",
-        "title": "Port Manager: Check Port Availability"
+        "title": "%cmd.checkPort%"
       },
       {
         "command": "portManager.killPort",
-        "title": "Port Manager: Kill Port"
+        "title": "%cmd.killPort%"
+      },
+      {
+        "command": "portManager.setLanguage",
+        "title": "%cmd.setLanguage%"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
           "id": "portManager",
-          "title": "Port Manager",
+          "title": "%ext.displayName%",
           "icon": "$(plug)"
         }
       ]
@@ -69,7 +100,7 @@
         {
           "type": "webview",
           "id": "portManager.panel",
-          "name": "Ports"
+          "name": "%view.title%"
         }
       ]
     },
@@ -83,6 +114,9 @@
         },
         {
           "command": "portManager.killPort"
+        },
+        {
+          "command": "portManager.setLanguage"
         }
       ]
     },

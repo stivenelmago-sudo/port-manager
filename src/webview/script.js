@@ -2,9 +2,33 @@
  * Port Manager - Webview Client Script
  */
 
-module.exports = function getScript() {
+module.exports = function getScript(strings = {}) {
+  const s = JSON.stringify({
+    statsUsed: strings.statsUsed || "Used",
+    statsFree: strings.statsFree || "Free",
+    statsTotal: strings.statsTotal || "Total",
+    colPort: strings.colPort || "Port",
+    colState: strings.colState || "State",
+    colProcess: strings.colProcess || "Process",
+    colPid: strings.colPid || "PID",
+    colAction: strings.colAction || "Action",
+    stateListen: strings.stateListen || "LISTEN",
+    stateFree: strings.stateFree || "FREE",
+    kill: strings.kill || "KILL",
+    confirm: strings.confirm || "Confirm",
+    cancel: strings.cancel || "Cancel",
+    empty: strings.empty || "No matching ports",
+    toastKilled: strings.toastKilled || "was killed",
+    toastKillFailed: strings.toastKillFailed || "Kill failed",
+    toastScan: strings.toastScan || "Used / Free",
+    bulkKill: strings.bulkKill || "KILL Selected",
+    refresh: strings.refresh || "Refresh",
+    rangeScan: strings.rangeScan || "Range Scan",
+  });
+
   return /*javascript*/ `
   const vscode = acquireVsCodeApi();
+  const T = ${s};
 
   // State
   let ports = [];
@@ -38,20 +62,20 @@ module.exports = function getScript() {
         break;
 
       case "killed":
-        showToast(":" + msg.port + " を終了しました", "success");
+        showToast(":" + msg.port + " " + T.toastKilled, "success");
         confirmingKill = null;
-        selected.delete(msg.port);
+        if (typeof msg.port === "number") selected.delete(msg.port);
         vscode.postMessage({ command: "refresh" });
         break;
 
       case "killError":
-        showToast("終了失敗: " + msg.error, "error");
+        showToast(T.toastKillFailed + ": " + msg.error, "error");
         confirmingKill = null;
         render();
         break;
 
       case "scanResult":
-        showToast("使用中: " + msg.used + " / 空き: " + msg.free, "success");
+        showToast(T.toastScan.replace("{used}", msg.used).replace("{free}", msg.free), "success");
         break;
     }
   });
@@ -95,9 +119,9 @@ module.exports = function getScript() {
     const freeCount = ports.filter((p) => p.state === "FREE").length;
 
     elements.stats().innerHTML =
-      '<span><span class="dot" style="background:#FF5252"></span> 使用中 ' + listenCount + "</span>" +
-      '<span><span class="dot" style="background:#00E676"></span> 空き ' + freeCount + "</span>" +
-      "<span>合計 " + ports.length + "</span>";
+      '<span><span class="dot" style="background:#FF5252"></span> ' + T.statsUsed + " " + listenCount + "</span>" +
+      '<span><span class="dot" style="background:#00E676"></span> ' + T.statsFree + " " + freeCount + "</span>" +
+      "<span>" + T.statsTotal + " " + ports.length + "</span>";
   }
 
   function renderTable(list) {
@@ -117,7 +141,7 @@ module.exports = function getScript() {
     const isSelected = selected.has(p.port);
     const isListen = p.state === "LISTEN";
     const badgeClass = isListen ? "badge-listen" : "badge-free";
-    const badgeText = isListen ? "使用中" : "空き";
+    const badgeText = isListen ? T.stateListen : T.stateFree;
     const isConfirming = confirmingKill === p.port;
 
     const actionHtml = isListen ? renderActionButtons(p, isConfirming) : "";
@@ -139,12 +163,12 @@ module.exports = function getScript() {
     if (isConfirming) {
       return (
         '<span class="confirm-group">' +
-        '<button class="btn btn-sm btn-danger" onclick="confirmKill(' + p.port + "," + p.pid + ')">確認</button>' +
-        '<button class="btn btn-sm btn-outline" onclick="cancelKill()">取消</button>' +
+        '<button class="btn btn-sm btn-danger" onclick="confirmKill(' + p.port + "," + p.pid + ')">' + T.confirm + '</button>' +
+        '<button class="btn btn-sm btn-outline" onclick="cancelKill()">' + T.cancel + '</button>' +
         "</span>"
       );
     }
-    return '<button class="kill-btn" onclick="startKill(' + p.port + ')">KILL</button>';
+    return '<button class="kill-btn" onclick="startKill(' + p.port + ')">' + T.kill + '</button>';
   }
 
   function updateBulkKillButton() {
@@ -153,20 +177,26 @@ module.exports = function getScript() {
     );
     const btn = elements.bulkKillBtn();
     btn.style.display = activeSelected.length > 0 ? "inline-block" : "none";
-    btn.textContent = "選択をKILL (" + activeSelected.length + ")";
+    btn.textContent = T.bulkKill + " (" + activeSelected.length + ")";
   }
 
   function updateSortIndicators() {
+    const labels = {
+      port: T.colPort,
+      state: T.colState,
+      process: T.colProcess,
+      pid: T.colPid,
+    };
     document.querySelectorAll("th[data-sort]").forEach((th) => {
       const col = th.dataset.sort;
       th.classList.toggle("sorted", col === currentSort.col);
 
       if (col === currentSort.col) {
         th.textContent =
-          th.textContent.replace(/ [▲▼]$/, "") +
+          labels[col] +
           (currentSort.dir === "asc" ? " ▲" : " ▼");
       } else {
-        th.textContent = th.textContent.replace(/ [▲▼]$/, "");
+        th.textContent = labels[col] || th.textContent.replace(/ [▲▼]$/, "");
       }
     });
   }

@@ -1,0 +1,10 @@
+{
+  "ext.displayName": "Port Manager",
+  "ext.description": "查看监听端口、检查可用性并终止进程 — 全部在 VS Code 内完成。支持 macOS、Windows 和 Linux。",
+  "view.title": "端口",
+  "cmd.show": "Port Manager: 显示监听端口",
+  "cmd.checkPort": "Port Manager: 检查端口可用性",
+  "cmd.killPort": "Port Manager: 关闭端口",
+  "cmd.setLanguage": "Port Manager: 设置语言",
+  "config.language.description": "覆盖界面语言(自动 = 跟随 VS Code 显示语言)"
+}

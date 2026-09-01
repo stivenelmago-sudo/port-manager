@@ -1,0 +1,10 @@
+{
+  "ext.displayName": "Port Manager",
+  "ext.description": "Visualiza puertos en escucha, comprueba disponibilidad y mata procesos — todo dentro de VS Code. Compatible con macOS, Windows y Linux.",
+  "view.title": "Puertos",
+  "cmd.show": "Port Manager: Mostrar puertos en escucha",
+  "cmd.checkPort": "Port Manager: Verificar disponibilidad de puerto",
+  "cmd.killPort": "Port Manager: Cerrar puerto",
+  "cmd.setLanguage": "Port Manager: Cambiar idioma",
+  "config.language.description": "Anula el idioma de la interfaz (auto = seguir el idioma de VS Code)"
+}

@@ -1,0 +1,10 @@
+{
+  "ext.displayName": "Port Manager",
+  "ext.description": "عرض المنافذ المستمعة والتحقق من توفرها وإنهاء العمليات — كل ذلك داخل VS Code. يعمل على macOS وWindows وLinux.",
+  "view.title": "المنافذ",
+  "cmd.show": "Port Manager: عرض المنافذ المستمعة",
+  "cmd.checkPort": "Port Manager: التحقق من توفر المنفذ",
+  "cmd.killPort": "Port Manager: إغلاق المنفذ",
+  "cmd.setLanguage": "Port Manager: تعيين اللغة",
+  "config.language.description": "تجاوز لغة الواجهة (تلقائي = اتباع لغة عرض VS Code)"
+}
