@@ -47,10 +47,10 @@ function activate(context) {
     vscode.commands.registerCommand("portManager.setLanguage", async () => {
       const langs = i18n.SUPPORTED.map((l) => ({
         label: l,
-        description: l === i18n.getLanguage() ? i18n.t("setLanguage.current") : "",
+        description: l === i18n.getLanguage() ? i18n.tr("setLanguage.current") : "",
       }));
       const picked = await vscode.window.showQuickPick(langs, {
-        placeHolder: i18n.t("setLanguage.prompt"),
+        placeHolder: i18n.tr("setLanguage.prompt"),
       });
       if (!picked) return;
       try {
@@ -61,7 +61,7 @@ function activate(context) {
         // Configuration target may be unavailable in some contexts; continue anyway
       }
       i18n.setLanguage(picked.label);
-      vscode.window.showInformationMessage(i18n.t("setLanguage.changed").replace("{0}", picked.label));
+      vscode.window.showInformationMessage(i18n.tr("setLanguage.changed", picked.label));
     })
   );
 }
