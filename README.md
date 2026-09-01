@@ -125,7 +125,16 @@ src/
     ├── index.js          # HTML generator
     ├── styles.js         # CSS
     └── script.js         # Client-side JS
+
+package.nls.json          # Default NLS (English) — VS Code convention
+package.nls.es.json       # Spanish NLS
+package.nls.zh.json       # Chinese NLS
+package.nls.hi.json       # Hindi NLS
+package.nls.ar.json       # Arabic NLS
+package.nls.ja.json       # Japanese NLS
 ```
+
+> **Note**: `package.nls.*.json` files must live at the extension root — VS Code looks them up by hardcoded path (`package.json + .nls.{lang}.json`). Moving them to a subfolder breaks native localization of command titles, view names, and configuration descriptions.
 
 ### Publishing to VS Code Marketplace
 

@@ -133,6 +133,10 @@
     "@types/vscode": "^1.80.0"
   },
   "scripts": {
+    "lint": "node --check src/extension.js && for f in $(find src -name '*.js' -type f); do node --check \"$f\"; done",
+    "validate": "node scripts/validate.js",
+    "test": "node scripts/smoke-test.js",
+    "build": "npm run lint && npm run validate && npm test && vsce package --no-dependencies",
     "package": "vsce package",
     "publish": "vsce publish"
   }
