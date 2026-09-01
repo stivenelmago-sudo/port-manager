@@ -26,7 +26,6 @@ module.exports = {
     PORTS: "ports",
     KILLED: "killed",
     KILL_ERROR: "killError",
-    SCAN_RESULT: "scanResult",
     WITR_HINT: "witrHint",
   },
 

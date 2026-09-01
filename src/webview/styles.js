@@ -274,5 +274,11 @@ module.exports = function getStyles() {
     color: var(--vscode-inputValidation-warningForeground, #fff);
     border-color: var(--vscode-inputValidation-warningBorder, #bfa000);
   }
+
+  /* Stats */
+  .stat-ancestry {
+    color: var(--vscode-textLink-foreground, #4ec9b0);
+    font-weight: 500;
+  }
 `;
 };

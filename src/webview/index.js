@@ -46,6 +46,7 @@ function getWebviewContent(strings = {}) {
     ancestryLoading: "loading…",
     witrMissing: "Process ancestry unavailable",
     witrPermission: "Run VS Code as Admin/sudo for full ancestry",
+    statsAncestry: "with ancestry",
   }, strings);
   s._supported = strings._supported || [];
 

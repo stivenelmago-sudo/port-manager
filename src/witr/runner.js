@@ -21,6 +21,31 @@ const { TIMEOUT } = require("../core/constants");
 
 const WITR_TIMEOUT_MS = 8000;
 
+// Per-process TTL cache: each port's enrichment is reused for CACHE_TTL_MS
+// before witr is re-invoked. Keeps the panel snappy when the user toggles
+// the refresh button rapidly and prevents spawning witr N times for N ports
+// on every render cycle.
+const CACHE_TTL_MS = 3000;
+const cache = new Map();
+
+function cacheGet(port) {
+  const e = cache.get(port);
+  if (!e) return null;
+  if (Date.now() > e.expires) {
+    cache.delete(port);
+    return null;
+  }
+  return e.value;
+}
+
+function cacheSet(port, value) {
+  cache.set(port, { value, expires: Date.now() + CACHE_TTL_MS });
+}
+
+function cacheClear() {
+  cache.clear();
+}
+
 class WitrError extends Error {
   constructor(code, message) {
     super(message);
@@ -195,6 +220,9 @@ function parseShortLine(line) {
  * with the target port. We rely on stderr/stdout order; WITR prints each
  * divider sequentially.
  *
+ * Cached ports (within CACHE_TTL_MS) are served from memory; the rest are
+ * fetched in a single witr invocation.
+ *
  * @param {string} bin
  * @param {number[]} ports
  * @returns {Promise<Map<number, object|null>>} port → enrichment or null
@@ -203,11 +231,28 @@ async function lookupPortsBatch(bin, ports) {
   const out = new Map();
   if (!ports || ports.length === 0) return out;
 
+  // Serve cached entries; collect the miss-list.
+  const miss = [];
+  for (const p of ports) {
+    const hit = cacheGet(p);
+    if (hit !== null) out.set(p, hit);
+    else miss.push(p);
+  }
+
+  if (miss.length === 0) return out;
+
   const args = ["--short"];
-  for (const p of ports) args.push("--port", String(p));
+  for (const p of miss) args.push("--port", String(p));
 
   const res = await run(bin, args);
-  if (!res.ok) return out;
+  if (!res.ok) {
+    // Cache null for missed ports so we don't keep retrying within the TTL.
+    for (const p of miss) {
+      cacheSet(p, null);
+      out.set(p, null);
+    }
+    return out;
+  }
 
   let currentPort = null;
   const text = res.text || "";
@@ -220,16 +265,28 @@ async function lookupPortsBatch(bin, ports) {
       continue;
     }
     if (currentPort != null) {
-      out.set(currentPort, parseShortLine(line));
+      const parsed = parseShortLine(line);
+      cacheSet(currentPort, parsed);
+      out.set(currentPort, parsed);
       currentPort = null;
     }
   }
 
   // Fallback: if WITR didn't emit dividers (single-port path or older versions),
   // assign the first parsed line to the first requested port.
-  if (out.size === 0 && ports.length === 1) {
+  if (out.size === 0 && miss.length === 1) {
     const parsed = parseShortLine(text);
-    if (parsed) out.set(ports[0], parsed);
+    cacheSet(miss[0], parsed);
+    out.set(miss[0], parsed);
+  }
+
+  // Cache null for any requested port that produced no chain — avoids
+  // repeated witr calls for ports witr simply can't trace.
+  for (const p of miss) {
+    if (!out.has(p)) {
+      cacheSet(p, null);
+      out.set(p, null);
+    }
   }
 
   return out;
@@ -243,4 +300,6 @@ module.exports = {
   lookupPort,
   lookupPortsBatch,
   parseShortLine,
+  cacheClear,
+  CACHE_TTL_MS,
 };

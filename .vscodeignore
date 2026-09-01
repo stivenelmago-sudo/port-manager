@@ -5,10 +5,11 @@ node_modules/**
 .git/**
 scripts/**
 
-# Exclude binaries for other platforms — CI builds one VSIX per platform
-resources/bin/witr-linux-*
-!resources/bin/witr-linux-*.gitkeep
-resources/bin/witr-darwin-*
-!resources/bin/witr-darwin-*.gitkeep
-resources/bin/witr-windows-*
-!resources/bin/witr-windows-*.gitkeep
+# Per-platform binaries:
+# - CI must keep ONLY the matching binary before running vsce package.
+# - .gitignore ignores all of them, .vscodeignore allows them but only the
+#   one matching this build will be present (others are deleted by
+#   scripts/build-platform.js).
+# Placeholder files (always kept):
+!resources/bin/.gitkeep
+!resources/bin/README.md

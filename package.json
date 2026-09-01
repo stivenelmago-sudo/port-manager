@@ -99,7 +99,8 @@
       },
       {
         "command": "portManager.showAncestry",
-        "title": "%cmd.showAncestry%"
+        "title": "%cmd.showAncestry%",
+        "icon": "$(debug-disconnect)"
       }
     ],
     "viewsContainers": {

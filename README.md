@@ -121,6 +121,7 @@ src/
 ├── i18n/
 │   ├── index.js          # i18n API (detect, t, tr)
 │   └── messages.js       # Translation dictionary (6 languages)
+├── witr/                 # Bundled witr integration (host + runner)
 └── webview/
     ├── index.js          # HTML generator
     ├── styles.js         # CSS
@@ -164,17 +165,20 @@ npm install -g @vscode/vsce
 
 #### 4. Login and Publish
 
+PortPilot publishes **one VSIX per platform** (each bundles its own witr
+binary). Use the bundled script to download witr and package all targets:
+
 ```bash
-# Login to your publisher account
-vsce login <your-publisher-id>
-# Enter your PAT when prompted
+# Download witr binaries + build 6 per-platform VSIX
+./PUBLISH.sh
 
-# Package the extension (creates .vsix file)
-vsce package
-
-# Publish to Marketplace
-vsce publish
+# Build + publish in one step
+VSCE_PAT=your_token_here ./PUBLISH.sh --publish "$VSCE_PAT"
 ```
+
+The GitHub Actions workflow at `.github/workflows/release.yml` automates this
+on every `v*` tag push — set the `VSCE_PAT` secret in your repo settings and
+the marketplace update is fully hands-off.
 
 #### 5. Update Version (for subsequent releases)
 

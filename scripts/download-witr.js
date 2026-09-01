@@ -22,8 +22,9 @@ const TARGETS = [
   { platform: "linux",  arch: "arm64", file: "witr-linux-arm64" },
   { platform: "darwin", arch: "amd64", file: "witr-darwin-amd64" },
   { platform: "darwin", arch: "arm64", file: "witr-darwin-arm64" },
-  { platform: "win32",  arch: "amd64", file: "witr-windows-amd64.exe" },
-  { platform: "win32",  arch: "arm64", file: "witr-windows-arm64.exe" },
+  // Windows is distributed as a zip; the downloader unpacks it into resources/bin/.
+  { platform: "win32",  arch: "amd64", file: "witr-windows-amd64.zip", inner: "witr.exe", outName: "witr-windows-amd64.exe" },
+  { platform: "win32",  arch: "arm64", file: "witr-windows-arm64.zip", inner: "witr.exe", outName: "witr-windows-arm64.exe" },
 ];
 
 function parseArgs() {
@@ -96,11 +97,25 @@ async function main() {
 
   for (const t of targets) {
     const url = `https://github.com/${REPO}/releases/download/${tag}/${t.file}`;
-    const dest = path.join(binDir, t.file);
+    const isZip = t.file.endsWith(".zip");
+    const staged = path.join(binDir, isZip ? t.file : t.file);
     process.stdout.write(`  → ${t.file} ... `);
     try {
-      await downloadFile(url, dest);
-      if (t.platform !== "win32") fs.chmodSync(dest, 0o755);
+      await downloadFile(url, staged);
+      if (isZip) {
+        if (typeof require("child_process").execSync === "function") {
+          const finalName = t.outName || t.file.replace(/\.zip$/, "");
+          const finalPath = path.join(binDir, finalName);
+          require("child_process").execSync(`unzip -o -j "${staged}" "${t.inner}" -d "${binDir}"`, { stdio: "pipe" });
+          fs.renameSync(path.join(binDir, t.inner), finalPath);
+          fs.unlinkSync(staged);
+        } else {
+          console.log("FAIL — zip extraction requires unzip on PATH");
+          continue;
+        }
+      } else {
+        fs.chmodSync(staged, 0o755);
+      }
       console.log("ok");
     } catch (e) {
       console.log("FAIL");

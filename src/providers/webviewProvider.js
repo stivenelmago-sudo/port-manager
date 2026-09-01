@@ -160,7 +160,7 @@ function handleBulkKill(msg, webview) {
  * @param {Object} msg
  * @param {Object} webview
  */
-function handleScan(msg, webview) {
+function handleScan(msg, _webview) {
   const ports = getListeningPorts();
   const usedSet = new Set(ports.map((p) => p.port));
 
@@ -174,12 +174,6 @@ function handleScan(msg, webview) {
       freeCount++;
     }
   }
-
-  webview.postMessage({
-    type: MESSAGE_TYPE.SCAN_RESULT,
-    used: usedCount,
-    free: freeCount,
-  });
 }
 
 module.exports = { createWebviewProvider };

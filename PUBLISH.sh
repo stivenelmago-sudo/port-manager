@@ -1,113 +1,98 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ============================================================
-#  Port Manager - マーケットプレース公開手順
+#  PortPilot - Per-platform release build script
 # ============================================================
 #
-#  このスクリプトは手順メモです。上から順に実行してください。
+#  Downloads the matching WITR binary for every supported
+#  (platform, arch) pair and packages one VSIX per target.
+#  The Marketplace serves only the matching artifact on install.
 #
+#  Requirements:
+#    - Node 18+
+#    - unzip on PATH (for Windows .zip assets)
+#    - vsce (`npm i -g @vscode/vsce`)
+#
+#  Usage:
+#    ./PUBLISH.sh                       # build all 6 VSIX
+#    ./PUBLISH.sh --publish <token>     # build + vsce publish each
+#    ./PUBLISH.sh --target linux-x64    # build only one target
 # ============================================================
 
-echo "
-╔══════════════════════════════════════════════════════╗
-║       ⚡ Port Manager 公開手順ガイド                ║
-╚══════════════════════════════════════════════════════╝
+set -euo pipefail
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+cd "$ROOT"
 
- STEP 1: Azure DevOps で Personal Access Token を取得
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PUBLISH_TOKEN=""
+ONLY_TARGET=""
 
-  1. https://dev.azure.com にアクセス (Microsoftアカウントでログイン)
-  2. 右上のユーザーアイコン → Personal access tokens
-  3. 「New Token」をクリック
-  4. 以下を設定:
-     - Name: vsce-publish (任意)
-     - Organization: All accessible organizations
-     - Expiration: 必要な期間
-     - Scopes: 「Custom defined」→「Marketplace」→「Manage」にチェック
-  5. 「Create」→ トークンをコピーして保存
+for arg in "$@"; do
+  case "$arg" in
+    --publish)   PUBLISH_TOKEN="${2:-}"; shift 2 ;;
+    --publish=*) PUBLISH_TOKEN="${arg#*=}"; shift ;;
+    --target)    ONLY_TARGET="${2:-}"; shift 2 ;;
+    --target=*)  ONLY_TARGET="${arg#*=}"; shift ;;
+    *) echo "Unknown arg: $arg"; exit 1 ;;
+  esac
+done
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TARGETS=(
+  "linux-x64"
+  "linux-arm64"
+  "darwin-x64"
+  "darwin-arm64"
+  "win32-x64"
+  "win32-arm64"
+)
 
- STEP 2: Publisher を作成
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+declare -A TARGET_TO_PLATFORM=(
+  [linux-x64]="linux:x64"
+  [linux-arm64]="linux:arm64"
+  [darwin-x64]="darwin:x64"
+  [darwin-arm64]="darwin:arm64"
+  [win32-x64]="win32:x64"
+  [win32-arm64]="win32:arm64"
+)
 
-  1. https://marketplace.visualstudio.com/manage にアクセス
-  2. 「Create Publisher」をクリック
-  3. Publisher ID に package.json の \"publisher\" と同じ値を設定
-     → 現在: \"saiki\"  (好きな名前に変更可)
-  4. 表示名やメールアドレスを入力して作成
+if [[ -n "$ONLY_TARGET" ]]; then
+  TARGETS=("$ONLY_TARGET")
+fi
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo "==> Downloading WITR binaries..."
+node scripts/download-witr.js
 
- STEP 3: vsce をインストール & パッケージング
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-"
+ARTIFACTS=()
+for target in "${TARGETS[@]}"; do
+  p="${TARGET_TO_PLATFORM[$target]}"
+  if [[ -z "$p" ]]; then
+    echo "✗ Unknown target: $target"
+    exit 1
+  fi
+  platform="${p%:*}"
+  arch="${p#*:}"
+  echo ""
+  echo "==> Building $target ..."
+  node scripts/build-platform.js --platform "$platform" --arch "$arch"
+  vsix="portpilot-$(node -p "require('./package.json').version")-$target.vsix"
+  if [[ -f "$vsix" ]]; then
+    ARTIFACTS+=("$vsix")
+  else
+    echo "✗ Expected artifact not found: $vsix"
+    exit 1
+  fi
+done
 
-echo "  # vsce をグローバルインストール"
-echo "  npm install -g @vscode/vsce"
 echo ""
-echo "  # このディレクトリに移動"
-echo "  cd port-manager-marketplace"
-echo ""
-echo "  # .vsix パッケージを作成"
-echo "  vsce package"
-echo "  # → port-manager-1.0.0.vsix が生成される"
-echo ""
-echo "
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo "==> Built ${#ARTIFACTS[@]} VSIX:"
+for a in "${ARTIFACTS[@]}"; do echo "    $a"; done
 
- STEP 4: 公開前テスト (任意だけどおすすめ)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-  # .vsixファイルを手動インストールしてテスト
-  code --install-extension port-manager-1.0.0.vsix
-
-  # 動作確認ポイント:
-  #   ✅ サイドバーに Port Manager アイコンが出る
-  #   ✅ ポート一覧が表示される
-  #   ✅ 検索・ソートが動く
-  #   ✅ KILLボタンで確認ダイアログが出る
-  #   ✅ コマンドパレットから3つのコマンドが使える
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
- STEP 5: マーケットプレースに公開
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-  # ログイン (STEP1で取得したトークンを入力)
-  vsce login saiki
-
-  # 公開！
-  vsce publish
-
-  # または、ログインなしでトークン直接指定
-  vsce publish -p YOUR_ACCESS_TOKEN
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
- STEP 6: バージョンアップ時
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-  # パッチバージョンアップ (1.0.0 → 1.0.1)
-  vsce publish patch
-
-  # マイナーバージョンアップ (1.0.0 → 1.1.0)
-  vsce publish minor
-
-  # メジャーバージョンアップ (1.0.0 → 2.0.0)
-  vsce publish major
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
- スクリーンショットについて
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-  README.md に images/screenshot.png を参照しています。
-  公開前にVSCodeで実際に動かしたスクリーンショットを
-  images/screenshot.png として保存してください。
-
-  推奨サイズ: 1280x800 程度
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-"
+if [[ -n "$PUBLISH_TOKEN" ]]; then
+  echo ""
+  echo "==> Publishing with token..."
+  for a in "${ARTIFACTS[@]}"; do
+    echo "    → $a"
+    npx vsce publish -p "$PUBLISH_TOKEN" --packagePath "$a"
+  done
+  echo ""
+  echo "✓ Published ${#ARTIFACTS[@]} artifacts"
+fi

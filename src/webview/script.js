@@ -20,7 +20,6 @@ module.exports = function getScript(strings = {}) {
     empty: strings.empty || "No matching ports",
     toastKilled: strings.toastKilled || "was killed",
     toastKillFailed: strings.toastKillFailed || "Kill failed",
-    toastScan: strings.toastScan || "Used / Free",
     bulkKill: strings.bulkKill || "KILL Selected",
     refresh: strings.refresh || "Refresh",
     rangeScan: strings.rangeScan || "Range Scan",
@@ -28,6 +27,7 @@ module.exports = function getScript(strings = {}) {
     ancestryLoading: strings.ancestryLoading || "loading…",
     witrMissing: strings.witrMissing || "Process ancestry unavailable",
     witrPermission: strings.witrPermission || "Run VS Code as Admin/sudo for full ancestry",
+    statsAncestry: strings.statsAncestry || "with ancestry",
   });
 
   return /*javascript*/ `
@@ -79,10 +79,6 @@ module.exports = function getScript(strings = {}) {
         showToast(T.toastKillFailed + ": " + msg.error, "error");
         confirmingKill = null;
         render();
-        break;
-
-      case "scanResult":
-        showToast(T.toastScan.replace("{used}", msg.used).replace("{free}", msg.free), "success");
         break;
     }
   });
@@ -138,9 +134,17 @@ module.exports = function getScript(strings = {}) {
   function renderStats() {
     const listenCount = ports.filter((p) => p.state === "LISTEN").length;
     const total = ports.length;
+    const withAncestry = ports.filter((p) => p.witr && p.witr.chain).length;
+
+    const ancestryLabel = T.statsAncestry || "ancestry";
+    const ancestrySpan = withAncestry > 0
+      ? '<span title="' + withAncestry + ' port(s) with ancestry" class="stat-ancestry">' +
+        "🔗 " + withAncestry + " " + ancestryLabel + "</span>"
+      : "";
 
     elements.stats().innerHTML =
       '<span><span class="dot" style="background:#FF5252"></span> ' + T.statsUsed + " " + listenCount + "</span>" +
+      ancestrySpan +
       "<span>" + T.statsTotal + " " + total + "</span>";
   }
 

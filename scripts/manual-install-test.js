@@ -108,6 +108,7 @@ const expectedCommands = [
   "portManager.checkPort",
   "portManager.killPort",
   "portManager.setLanguage",
+  "portManager.showAncestry",
 ];
 for (const id of expectedCommands) {
   const c = registeredCommands.find(x => x.id === id);
@@ -118,6 +119,22 @@ if (registeredProviders.find(p => p.id === "portManager.panel")) {
   console.log(`    ✓ webview provider: portManager.panel`);
 } else {
   console.log(`    ✗ MISSING webview provider`);
+}
+
+// Verify WITR configuration schema is exposed
+const pkgRaw = require("fs").readFileSync(path.join(EXT_PATH, "package.json"), "utf8");
+const pkgObj = JSON.parse(pkgRaw);
+const witrEnabled = pkgObj.contributes.configuration.properties["portManager.witr.enabled"];
+const witrBinary  = pkgObj.contributes.configuration.properties["portManager.witr.binaryPath"];
+if (witrEnabled && witrEnabled.type === "boolean") {
+  console.log(`    ✓ config: portManager.witr.enabled (default=${witrEnabled.default})`);
+} else {
+  console.log(`    ✗ MISSING config: portManager.witr.enabled`);
+}
+if (witrBinary && witrBinary.type === "string") {
+  console.log(`    ✓ config: portManager.witr.binaryPath (default="${witrBinary.default}")`);
+} else {
+  console.log(`    ✗ MISSING config: portManager.witr.binaryPath`);
 }
 
 // ─── Step 6: Invoke each command ───────────────────────────────
