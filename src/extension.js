@@ -27,11 +27,11 @@ function activate(context) {
   registerCommands(context);
 
   // Refresh UI on language change
-  context.subscriptions.push(
-    i18n.onLanguageChange(() => {
+  context.subscriptions.push({
+    dispose: i18n.onLanguageChange(() => {
       vscode.commands.executeCommand("workbench.action.reloadWindow");
-    })
-  );
+    }),
+  });
 
   // React to manual configuration changes
   context.subscriptions.push(

@@ -174,7 +174,7 @@ module.exports = function getScript(strings = {}) {
 
     return (
       '<tr class="' + (isSelected ? "selected" : "") + '">' +
-      "<td><input type=\"checkbox\" " + (isSelected ? "checked" : "") +
+      '<td><input type="checkbox" ' + (isSelected ? "checked" : "") +
       ' onchange="togglePort(' + p.port + ')"></td>' +
       '<td class="port-num">:' + p.port + "</td>" +
       '<td><span class="badge ' + badgeClass + '">' + badgeText + "</span></td>" +
@@ -192,7 +192,7 @@ module.exports = function getScript(strings = {}) {
     }
     const chain = p.witr.chain;
     const supervisor = p.witr.supervisor || "";
-    const title = supervisor ? "title=\"" + escapeHtml(supervisor) + "\"" : "";
+    const title = supervisor ? 'title="' + escapeHtml(supervisor) + '"' : "";
     return (
       '<span class="ancestry-chain" ' + title + ">" +
       '<span class="ancestry-sup">' + escapeHtml(supervisor || chain.split("→")[0].trim()) + "</span>" +

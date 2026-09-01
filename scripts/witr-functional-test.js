@@ -113,6 +113,17 @@ const BIN = path.resolve(__dirname, "..", "resources", "bin", "witr-linux-amd64"
   check("isSupported() returns boolean", typeof host.isSupported() === "boolean");
   check("resolveBinaryName() returns string or null", typeof host.resolveBinaryName() === "string" || host.resolveBinaryName() === null);
 
+  // 8. Webview script.js must be syntactically valid JavaScript.
+  // (Previously had string-quote bugs that silently broke the table render.)
+  console.log("\n8. Webview script syntax:");
+  const getScript = require("../src/webview/script");
+  try {
+    new Function(getScript({}));
+    check("script.js parses as valid JavaScript", true);
+  } catch (e) {
+    check("script.js parses as valid JavaScript", false, `(error: ${e.message})`);
+  }
+
   console.log("");
   if (failed === 0) {
     console.log("✓ ALL WITR FUNCTIONALITY VERIFIED");
