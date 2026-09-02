@@ -192,6 +192,25 @@ module.exports = function getStyles() {
   th:hover { opacity: 0.8; }
   th.sorted { opacity: 1; color: var(--accent); }
 
+  /* Reorder: draggable headers; cursor indicates the affordance. */
+  th[draggable="true"] { cursor: grab; }
+  th[draggable="true"]:active { cursor: grabbing; }
+  th.th-dragging { opacity: 0.5; outline: 1px dashed var(--accent); }
+  th.drag-over { box-shadow: inset 0 -2px 0 var(--accent); }
+
+  /* Resize handle on the right edge of each reorderable header. */
+  .resize-handle {
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: 6px;
+    cursor: col-resize;
+    user-select: none;
+  }
+  .resize-handle:hover { background: var(--accent); opacity: 0.6; }
+  th { position: sticky; } /* ensure handle positioning works (already set above but reaffirmed) */
+  body.resizing-col { cursor: col-resize !important; user-select: none; }
+  body.resizing-col * { cursor: col-resize !important; }
+
   td {
     padding: 6px 12px;
     border-bottom: 1px solid var(--border);

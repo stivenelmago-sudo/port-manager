@@ -73,6 +73,8 @@ const MESSAGES = {
       autoRefreshOn: "Auto-refresh ON",
       autoRefreshOff: "Auto-refresh OFF",
       detailsTitle: "Process Details",
+      detailsTitleContainer: "Container Details",
+      detailsTitleLock: "File Lock Details",
       detailsAncestry: "Ancestry",
       detailsCwd: "Working Dir",
       detailsEnv: "Environment",
@@ -181,6 +183,8 @@ const MESSAGES = {
       autoRefreshOn: "Auto-refresco ON",
       autoRefreshOff: "Auto-refresco OFF",
       detailsTitle: "Detalles del proceso",
+      detailsTitleContainer: "Detalles del contenedor",
+      detailsTitleLock: "Detalles del bloqueo de archivo",
       detailsAncestry: "Ancestros",
       detailsCwd: "Dir. de trabajo",
       detailsEnv: "Entorno",
@@ -289,6 +293,8 @@ const MESSAGES = {
       autoRefreshOn: "自动刷新 开",
       autoRefreshOff: "自动刷新 关",
       detailsTitle: "进程详情",
+      detailsTitleContainer: "容器详情",
+      detailsTitleLock: "文件锁详情",
       detailsAncestry: "来源链",
       detailsCwd: "工作目录",
       detailsEnv: "环境变量",
@@ -397,6 +403,8 @@ const MESSAGES = {
       autoRefreshOn: "ऑटो-रिफ्रेश ON",
       autoRefreshOff: "ऑटो-रिफ्रेश OFF",
       detailsTitle: "प्रक्रिया विवरण",
+      detailsTitleContainer: "कंटेनर विवरण",
+      detailsTitleLock: "फ़ाइल लॉक विवरण",
       detailsAncestry: "वंश",
       detailsCwd: "कार्य निर्देशिका",
       detailsEnv: "पर्यावरण",
@@ -505,6 +513,8 @@ const MESSAGES = {
       autoRefreshOn: "التحديث التلقائي يعمل",
       autoRefreshOff: "التحديث التلقائي متوقف",
       detailsTitle: "تفاصيل العملية",
+      detailsTitleContainer: "تفاصيل الحاوية",
+      detailsTitleLock: "تفاصيل قفل الملف",
       detailsAncestry: "السلسلة",
       detailsCwd: "دليل العمل",
       detailsEnv: "البيئة",
@@ -613,6 +623,8 @@ const MESSAGES = {
       autoRefreshOn: "自動更新 ON",
       autoRefreshOff: "自動更新 OFF",
       detailsTitle: "プロセスの詳細",
+      detailsTitleContainer: "コンテナの詳細",
+      detailsTitleLock: "ファイルロックの詳細",
       detailsAncestry: "祖先",
       detailsCwd: "作業ディレクトリ",
       detailsEnv: "環境変数",
@@ -655,4 +667,3 @@ const MESSAGES = {
 };
 
 module.exports = { MESSAGES };
-

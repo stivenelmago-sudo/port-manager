@@ -41,6 +41,8 @@ module.exports = function getScript(strings = {}) {
     autoRefreshOn: strings.autoRefreshOn || "Auto-refresh ON",
     autoRefreshOff: strings.autoRefreshOff || "Auto-refresh OFF",
     detailsTitle: strings.detailsTitle || "Process Details",
+    detailsTitleContainer: strings.detailsTitleContainer || "Container Details",
+    detailsTitleLock: strings.detailsTitleLock || "File Lock Details",
     detailsAncestry: strings.detailsAncestry || "Ancestry",
     detailsCwd: strings.detailsCwd || "Working Dir",
     detailsEnv: strings.detailsEnv || "Environment",
@@ -95,7 +97,55 @@ module.exports = function getScript(strings = {}) {
   let filter = "";
   let confirmingKill = null;
   let detailsPid = null;
+  let detailsKind = "process";
   let locksShowAllOpen = false;
+
+  // Default column order per tab (matches the static header layout in
+  // getTable). The user can drag <th> elements to reorder and drag the right
+  // edge of a <th> to resize; the resulting order + widths are persisted in
+  // localStorage so they survive webview reloads.
+  const DEFAULT_COLUMNS = {
+    ports:     ["port", "state", "process", "pid", "ancestry"],
+    processes: ["process", "pid", "port2", "ancestry2", "cpu", "memory", "cmd"],
+  };
+  const COLUMN_LAYOUT_KEY = "portpilot.columnLayout.v1";
+  const COLUMN_WIDTHS_KEY = "portpilot.columnWidths.v1";
+  let columnLayout = loadColumnLayout();
+  let columnWidths = loadColumnWidths();
+  let lastResizeAt = 0;
+
+  function loadColumnLayout() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(COLUMN_LAYOUT_KEY) || "null");
+      if (!raw || typeof raw !== "object") return cloneDefaults();
+      return {
+        ports: Array.isArray(raw.ports) && raw.ports.length ? raw.ports.slice() : cloneDefaults().ports,
+        processes: Array.isArray(raw.processes) && raw.processes.length ? raw.processes.slice() : cloneDefaults().processes,
+      };
+    } catch {
+      return cloneDefaults();
+    }
+  }
+  function cloneDefaults() {
+    return {
+      ports: DEFAULT_COLUMNS.ports.slice(),
+      processes: DEFAULT_COLUMNS.processes.slice(),
+    };
+  }
+  function saveColumnLayout() {
+    try { localStorage.setItem(COLUMN_LAYOUT_KEY, JSON.stringify(columnLayout)); } catch {}
+  }
+  function loadColumnWidths() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(COLUMN_WIDTHS_KEY) || "null");
+      return raw && typeof raw === "object" ? raw : {};
+    } catch {
+      return {};
+    }
+  }
+  function saveColumnWidths() {
+    try { localStorage.setItem(COLUMN_WIDTHS_KEY, JSON.stringify(columnWidths)); } catch {}
+  }
 
   // Auto-refresh state.
   const REFRESH_BASE_MS = 3000;
@@ -107,6 +157,7 @@ module.exports = function getScript(strings = {}) {
   const elements = {
     tbody: () => document.getElementById("tbody"),
     stats: () => document.getElementById("stats"),
+    detailsTitle: () => document.querySelector("#detailsPanel .details-title"),
     empty: () => document.getElementById("empty"),
     search: () => document.getElementById("search"),
     scanPanel: () => document.getElementById("scanPanel"),
@@ -515,46 +566,64 @@ module.exports = function getScript(strings = {}) {
     const isSelected = selected.has(port);
     const isConfirming = confirmingKill === port;
 
-    let cells = "";
+    // Build a per-row cell map keyed by data-col. The row is then emitted in
+    // the column order persisted by the user (columnLayout[currentTab]).
+    const cellsByCol = {};
     if (isPort) {
       const isListen = p.state === "LISTEN";
       const badgeClass = isListen ? "badge-listen" : "badge-free";
       const badgeText = isListen ? T.stateListen : T.stateFree;
-      const ancestryHtml = renderAncestry(p);
-      cells =
-        '<td class="port-num">:' + p.port + "</td>" +
-        '<td><span class="badge ' + badgeClass + '">' + badgeText + "</span></td>" +
-        '<td class="process-name">' + escapeHtml(p.process || "-") + "</td>" +
-        '<td class="pid">' + (p.pid || "-") + "</td>" +
-        '<td class="ancestry">' + ancestryHtml + "</td>";
+      cellsByCol.port = '<td class="port-num">:' + p.port + "</td>";
+      cellsByCol.state =
+        '<td><span class="badge ' + badgeClass + '">' + badgeText + "</span></td>";
+      cellsByCol.process =
+        '<td class="process-name">' + escapeHtml(p.process || "-") + "</td>";
+      cellsByCol.pid = '<td class="pid">' + (p.pid || "-") + "</td>";
+      cellsByCol.ancestry = '<td class="ancestry">' + renderAncestry(p) + "</td>";
     } else {
       const cpu = p.cpu != null ? (p.cpu.toFixed(1) + "%") : "-";
       const mem = formatMemory(p.memory);
-      const portLabel = p.port ? '<span class="port-num">:' + p.port + "</span>" : "-";
+      const portLabel = p.port
+        ? '<span class="port-num">:' + p.port + "</span>"
+        : "-";
       const ancestryHtml = p.ancestry
         ? '<span class="ancestry-chain" title="' + escapeHtml(p.ancestry) + '">' + escapeHtml(truncate(p.ancestry, 60)) + "</span>"
         : '<span class="ancestry-none">' + escapeHtml(T.ancestryNone) + "</span>";
-      cells =
-        '<td class="process-name">' + escapeHtml(p.name || p.process || "-") + "</td>" +
-        '<td class="pid">' + (p.pid || "-") + "</td>" +
-        '<td class="port-cell">' + portLabel + "</td>" +
-        '<td class="ancestry">' + ancestryHtml + "</td>" +
-        '<td class="cpu">' + cpu + "</td>" +
-        '<td class="memory">' + mem + "</td>" +
-        '<td class="command" title="' + escapeHtml(p.command || "") + '">' + escapeHtml(truncate(p.command || "", 60)) + "</td>";
+      // port2 + ancestry2 are the duplicate column keys used by the processes
+      // tab; they map to the same data as port/ancestry on ports but live in
+      // separate <th> nodes so they can be ordered independently.
+      cellsByCol.process =
+        '<td class="process-name">' + escapeHtml(p.name || p.process || "-") + "</td>";
+      cellsByCol.pid = '<td class="pid">' + (p.pid || "-") + "</td>";
+      cellsByCol.port2 = '<td class="port-cell">' + portLabel + "</td>";
+      cellsByCol.ancestry2 = '<td class="ancestry">' + ancestryHtml + "</td>";
+      cellsByCol.cpu = '<td class="cpu">' + cpu + "</td>";
+      cellsByCol.memory = '<td class="memory">' + mem + "</td>";
+      cellsByCol.cmd =
+        '<td class="command" title="' + escapeHtml(p.command || "") + '">' +
+        escapeHtml(truncate(p.command || "", 60)) + "</td>";
+    }
+
+    // Fixed columns (select, action) flank the reorderable middle. The user-
+    // configurable order is stored in columnLayout[currentTab].
+    const order = (columnLayout[currentTab] || []).filter(
+      (c) => c !== "select" && c !== "action"
+    );
+    let middle = "";
+    for (const col of order) {
+      if (cellsByCol[col]) middle += cellsByCol[col];
     }
 
     const actionHtml = renderActionButtons(p, isConfirming);
     // Click → open details for the owning PID. We pass the PID (not the port)
-    // so the backend looks up the actual process via witr. Container rows pass
-    // the container id and let rowClicked() route them.
-    const detailId = isPort ? (p.pid || p.port) : (p.pid || port);
+    // so the backend looks up the actual process via witr.
+    const detailId = isPort ? p.pid || p.port : p.pid || port;
 
     return (
       '<tr class="' + (isSelected ? "selected" : "") + '" onclick="rowClicked(' + detailId + ', event)">' +
       '<td class="col-select"><input type="checkbox" ' + (isSelected ? "checked" : "") +
       ' onchange="togglePort(' + port + ')"></td>' +
-      cells +
+      middle +
       '<td class="col-action" style="text-align:right">' + actionHtml + "</td>" +
       "</tr>"
     );
@@ -627,7 +696,12 @@ module.exports = function getScript(strings = {}) {
 
   function openDetails(pid, kind = "process") {
     detailsPid = pid;
+    detailsKind = kind;
     elements.detailsPanel().style.display = "flex";
+    elements.detailsTitle().textContent =
+      kind === "container" ? T.detailsTitleContainer
+      : kind === "lock" ? T.detailsTitleLock
+      : T.detailsTitle;
     elements.detailsBody().innerHTML =
       '<div class="details-loading">' + escapeHtml(T.detailsLoading) + "</div>";
     if (kind === "process") {
@@ -649,7 +723,9 @@ module.exports = function getScript(strings = {}) {
 
   function closeDetails() {
     detailsPid = null;
+    detailsKind = "process";
     elements.detailsPanel().style.display = "none";
+    if (elements.detailsTitle) elements.detailsTitle().textContent = T.detailsTitle;
   }
 
   function renderDetails(pid, data, error) {
@@ -769,6 +845,9 @@ module.exports = function getScript(strings = {}) {
   function refresh() { vscode.postMessage({ command: "refresh" }); }
 
   function sortBy(col) {
+    // Ignore sort clicks that fire immediately after a resize (mousedown on
+    // the resize handle can bubble up to the <th>'s onclick in some browsers).
+    if (Date.now() - lastResizeAt < 250) return;
     if (currentSort.col === col) currentSort.dir = currentSort.dir === "asc" ? "desc" : "asc";
     else currentSort = { col, dir: "asc" };
     render();
@@ -823,6 +902,134 @@ module.exports = function getScript(strings = {}) {
     setTimeout(() => el.remove(), 3000);
   }
 
+  // ─── Column reorder + resize ────────────────────────────────────
+  // Each reorderable/resizable <th> is draggable; the resize handle is a
+  // right-edge <span> that captures horizontal drag without conflicting with
+  // the reorder drag (which is initiated by grabbing the body of the cell).
+  function initColumnInteractions() {
+    const table = document.getElementById("mainTable");
+    if (!table) return;
+
+    // Apply persisted widths once on load (inline style wins over CSS).
+    applyColumnWidths();
+    syncColgroup();
+
+    // --- Resize ---
+    table.querySelectorAll("th .resize-handle").forEach((handle) => {
+      handle.addEventListener("mousedown", (e) => beginResize(e, handle));
+    });
+
+    // --- Reorder via native HTML5 drag-and-drop ---
+    let dragSrc = null;
+    table.querySelectorAll("th[draggable='true']").forEach((th) => {
+      th.addEventListener("dragstart", (e) => {
+        dragSrc = th;
+        th.classList.add("th-dragging");
+        e.dataTransfer.effectAllowed = "move";
+        // Some browsers require non-empty data to actually start the drag.
+        try { e.dataTransfer.setData("text/plain", th.dataset.col || ""); } catch {}
+      });
+      th.addEventListener("dragend", () => {
+        th.classList.remove("th-dragging");
+        table.querySelectorAll("th.drag-over").forEach((el) => el.classList.remove("drag-over"));
+        dragSrc = null;
+      });
+      th.addEventListener("dragover", (e) => {
+        if (!dragSrc || dragSrc === th) return;
+        e.preventDefault();
+        th.classList.add("drag-over");
+      });
+      th.addEventListener("dragleave", () => th.classList.remove("drag-over"));
+      th.addEventListener("drop", (e) => {
+        e.preventDefault();
+        th.classList.remove("drag-over");
+        if (!dragSrc || dragSrc === th) return;
+        reorderColumn(dragSrc, th);
+      });
+    });
+  }
+
+  function beginResize(e, handle) {
+    e.preventDefault();
+    e.stopPropagation();
+    const th = handle.closest("th");
+    if (!th) return;
+    const startX = e.clientX;
+    const startWidth = th.getBoundingClientRect().width;
+    const col = th.dataset.col;
+    const onMove = (ev) => {
+      const next = Math.max(40, Math.round(startWidth + (ev.clientX - startX)));
+      th.style.width = next + "px";
+      columnWidths[col] = next;
+      syncColgroup();
+    };
+    const onUp = () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+      document.body.classList.remove("resizing-col");
+      saveColumnWidths();
+      lastResizeAt = Date.now();
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+    document.body.classList.add("resizing-col");
+  }
+
+  // Move srcCol so it ends up immediately before targetCol within the
+  // current tab's reorderable list. Fixed columns (select, action) are not
+  // touched.
+  function reorderColumn(srcTh, targetTh) {
+    const srcCol = srcTh.dataset.col;
+    const targetCol = targetTh.dataset.col;
+    if (!srcCol || !targetCol || srcCol === targetCol) return;
+    if (srcCol === "select" || srcCol === "action") return;
+    if (targetCol === "select" || targetCol === "action") return;
+
+    const order = columnLayout[currentTab].slice();
+    const srcIdx = order.indexOf(srcCol);
+    if (srcIdx === -1) return;
+    order.splice(srcIdx, 1);
+    let insertAt = order.indexOf(targetCol);
+    if (insertAt === -1) insertAt = order.length;
+    order.splice(insertAt, 0, srcCol);
+    columnLayout[currentTab] = order;
+    saveColumnLayout();
+
+    // Reorder the <th> nodes in the DOM to match. Find them by data-col.
+    const headRow = document.querySelector("#mainTable thead tr");
+    if (!headRow) return;
+    const nodes = Array.from(headRow.children);
+    const srcNode = nodes.find((n) => n.dataset && n.dataset.col === srcCol);
+    const targetNode = nodes.find((n) => n.dataset && n.dataset.col === targetCol);
+    if (!srcNode || !targetNode) return;
+    headRow.insertBefore(srcNode, targetNode);
+    syncColgroup();
+    render();
+  }
+
+  function applyColumnWidths() {
+    const table = document.getElementById("mainTable");
+    if (!table) return;
+    table.querySelectorAll("th[data-col]").forEach((th) => {
+      const w = columnWidths[th.dataset.col];
+      if (w) th.style.width = w + "px";
+    });
+  }
+
+  // Keep the <colgroup> widths in sync with <th> widths so cells in <tbody>
+  // match the column widths the user set.
+  function syncColgroup() {
+    const table = document.getElementById("mainTable");
+    if (!table) return;
+    let cg = document.getElementById("mainColgroup");
+    if (!cg) return;
+    const ths = table.querySelectorAll("thead th[data-col]");
+    cg.innerHTML = Array.from(ths).map((th) => {
+      const w = columnWidths[th.dataset.col] || th.getBoundingClientRect().width || "";
+      return '<col data-col="' + th.dataset.col + '"' + (w ? ' style="width:' + w + 'px"' : "") + ">";
+    }).join("");
+  }
+
   // ─── Init ────────────────────────────────────────────────────────
   // Expose handlers used by inline onclick="..." attributes on dynamically
   // rendered rows / panels so the global lookup window.<name> resolves.
@@ -842,6 +1049,8 @@ module.exports = function getScript(strings = {}) {
   window.changeLang = changeLang;
   window.containerAction = containerAction;
   window.processAction = processAction;
+
+  initColumnInteractions();
 
   vscode.postMessage({ command: "refresh" });
   scheduleNextRefresh(0);

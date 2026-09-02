@@ -212,27 +212,32 @@ function getScanPanel(s) {
 }
 
 function getTable(s) {
-  // The same table is used for both tabs; rows are rebuilt in JS based on the
-  // active tab. We expose all column headers (some hidden via CSS for the
-  // Processes tab).
+  // Shared table across Ports + Processes tabs. Each <th> carries a stable
+  // data-col key used by the client to reorder and resize columns
+  // (persisted in localStorage). Fixed columns (select, action) are not
+  // draggable / resizable.
+  const resizeHandle = '<span class="resize-handle" draggable="false" aria-hidden="true"></span>';
+  const th = (col, sortKey, tab, label, extra) =>
+    `<th data-col="${col}" data-sort="${sortKey}" data-tab="${tab}" draggable="true" onclick="sortBy('${sortKey}')"${extra ? " " + extra : ""}>${label}${resizeHandle}</th>`;
   return /*html*/ `
 <table id="mainTable">
+  <colgroup id="mainColgroup"></colgroup>
   <thead>
     <tr>
-      <th style="width:36px" class="col-select">
+      <th data-col="select" class="col-select" style="width:36px">
         <input type="checkbox" id="selectAll" onchange="toggleAll(this.checked)">
       </th>
-      <th data-sort="port" data-tab="ports" onclick="sortBy('port')" class="sorted">${escape(s.colPort)} ▲</th>
-      <th data-sort="state" data-tab="ports" onclick="sortBy('state')">${escape(s.colState)}</th>
-      <th data-sort="process" data-tab="ports" onclick="sortBy('process')">${escape(s.colProcess)}</th>
-      <th data-sort="pid" data-tab="ports" onclick="sortBy('pid')">${escape(s.colPid)}</th>
-      <th data-sort="ancestry" data-tab="ports" onclick="sortBy('ancestry')">${escape(s.colAncestry)}</th>
-      <th data-sort="port" data-tab="processes" onclick="sortBy('port')" style="display:none">${escape(s.colPort)}</th>
-      <th data-sort="ancestry" data-tab="processes" onclick="sortBy('ancestry')" style="display:none">${escape(s.colAncestry)}</th>
-      <th data-sort="cpu" data-tab="processes" onclick="sortBy('cpu')" style="display:none">${escape(s.colCpu)}</th>
-      <th data-sort="memory" data-tab="processes" onclick="sortBy('memory')" style="display:none">${escape(s.colMemory)}</th>
-      <th data-sort="cmd" data-tab="processes" onclick="sortBy('cmd')" style="display:none">${escape(s.colCommand)}</th>
-      <th style="text-align:right" class="col-action">${escape(s.colAction)}</th>
+      ${th("port",     "port",     "ports",     escape(s.colPort) + ' \u25B2', 'class="sorted"')}
+      ${th("state",    "state",    "ports",     escape(s.colState))}
+      ${th("process",  "process",  "ports",     escape(s.colProcess))}
+      ${th("pid",      "pid",      "ports",     escape(s.colPid))}
+      ${th("ancestry", "ancestry", "ports",     escape(s.colAncestry))}
+      ${th("port2",    "port",     "processes", escape(s.colPort), 'style="display:none"')}
+      ${th("ancestry2","ancestry", "processes", escape(s.colAncestry), 'style="display:none"')}
+      ${th("cpu",      "cpu",      "processes", escape(s.colCpu), 'style="display:none"')}
+      ${th("memory",   "memory",   "processes", escape(s.colMemory), 'style="display:none"')}
+      ${th("cmd",      "cmd",      "processes", escape(s.colCommand), 'style="display:none"')}
+      <th data-col="action" style="text-align:right" class="col-action">${escape(s.colAction)}</th>
     </tr>
   </thead>
   <tbody id="tbody"></tbody>
