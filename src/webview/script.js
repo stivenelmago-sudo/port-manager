@@ -905,6 +905,40 @@ module.exports = function getScript(strings = {}) {
 
   function changeLang(lang) { if (lang) vscode.postMessage({ command: "setLanguage", lang }); }
 
+  function toggleLangMenu(evt) {
+    if (evt) { evt.stopPropagation(); }
+    const menu = document.getElementById("langMenu");
+    const trigger = document.getElementById("langTrigger");
+    if (!menu || !trigger) return;
+    const open = menu.classList.toggle("open");
+    trigger.classList.toggle("open", open);
+    trigger.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+
+  function closeLangMenu() {
+    const menu = document.getElementById("langMenu");
+    const trigger = document.getElementById("langTrigger");
+    if (menu) menu.classList.remove("open");
+    if (trigger) {
+      trigger.classList.remove("open");
+      trigger.setAttribute("aria-expanded", "false");
+    }
+  }
+
+  function pickLang(lang) {
+    closeLangMenu();
+    changeLang(lang);
+  }
+
+  document.addEventListener("click", (e) => {
+    const dd = document.getElementById("langDropdown");
+    if (dd && !dd.contains(e.target)) closeLangMenu();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeLangMenu();
+  });
+
   function showToast(msg, type) {
     const container = elements.toastContainer();
     const el = document.createElement("div");
@@ -1059,6 +1093,9 @@ module.exports = function getScript(strings = {}) {
   window.toggleScan = toggleScan;
   window.scanRange = scanRange;
   window.changeLang = changeLang;
+  window.toggleLangMenu = toggleLangMenu;
+  window.pickLang = pickLang;
+  window.closeLangMenu = closeLangMenu;
   window.containerAction = containerAction;
   window.processAction = processAction;
 

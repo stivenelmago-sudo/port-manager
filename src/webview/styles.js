@@ -148,6 +148,104 @@ module.exports = function getStyles() {
     cursor: pointer;
     margin-left: auto;
   }
+
+  /* Custom language dropdown — replaces the native <select> which can't be
+     themed in webviews. Trigger mimics a button, the menu floats below it. */
+  .lang-dropdown {
+    position: relative;
+    margin-left: auto;
+  }
+  .lang-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px 5px 8px;
+    background: transparent;
+    color: var(--fg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 120ms, border-color 120ms;
+  }
+  .lang-trigger:hover { background: var(--hover); border-color: var(--input-border); }
+  .lang-trigger.open {
+    background: var(--hover);
+    border-color: var(--accent);
+  }
+  .lang-globe {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--vscode-badge-foreground, #fff);
+    font-size: 9px;
+    line-height: 1;
+  }
+  .lang-trigger-label { font-weight: 500; }
+  .lang-caret {
+    font-size: 10px;
+    opacity: 0.6;
+    transition: transform 150ms;
+  }
+  .lang-trigger.open .lang-caret { transform: rotate(180deg); }
+
+  .lang-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    min-width: 180px;
+    background: var(--vscode-editorWidget-background, var(--header-bg));
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+    padding: 4px;
+    display: none;
+    z-index: 30;
+    animation: langMenuFade 140ms ease-out;
+  }
+  .lang-menu.open { display: block; }
+  @keyframes langMenuFade {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .lang-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 8px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: var(--fg);
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+    transition: background 100ms;
+  }
+  .lang-dropdown-item:hover { background: var(--hover); }
+  .lang-dropdown-item.active { background: var(--input-bg); }
+  .lang-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+  .lang-dropdown-item.active .lang-dot { background: var(--accent); }
+  .lang-label { flex: 1; }
+  .lang-check {
+    opacity: 0;
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .lang-dropdown-item.active .lang-check { opacity: 1; }
   .btn-sm { padding: 3px 8px; font-size: 11px; }
 
   /* Stats */

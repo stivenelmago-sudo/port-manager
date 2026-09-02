@@ -185,18 +185,30 @@ function getLocksPanel(s) {
 function getToolbar(s) {
   const langs = (s._supported || []);
   const currentLang = s._lang || "en";
-  const langOptions = langs.map(l =>
-    `<option value="${escape(l.code)}"${l.code === currentLang ? " selected" : ""}>${escape(l.label)}</option>`
+  const current = langs.find((l) => l.code === currentLang) || langs[0] || { code: "en", label: "English" };
+  const langItems = langs.map(l =>
+    `<button type="button" class="lang-dropdown-item${l.code === currentLang ? " active" : ""}" data-lang="${escape(l.code)}" onclick="pickLang('${escape(l.code)}')">` +
+      '<span class="lang-dot" aria-hidden="true"></span>' +
+      '<span class="lang-label">' + escape(l.label) + '</span>' +
+      '<span class="lang-check" aria-hidden="true">✓</span>' +
+    '</button>'
   ).join("");
-  return /*html*/ `
+  return /*html */ `
 <div class="toolbar">
-  <input type="text" id="search" placeholder="${escape(s.searchPlaceholder)}">
+  <input type="text" id="search" placeholder="${escape(s.searchPlaceholder || "Search by port / process name...")}" />
   <button class="btn" onclick="refresh()">${escape(s.refresh)}</button>
   <button class="btn btn-outline" id="rangeScanBtn" onclick="toggleScan()">${escape(s.rangeScan)}</button>
   <button class="btn btn-danger" id="bulkKillBtn" style="display:none" onclick="bulkKill()">${escape(s.bulkKill)}</button>
-  <select class="btn btn-outline lang-select" id="langSelect" title="${escape(s.langMenu || "Language")}" onchange="changeLang(this.value)">
-    ${langOptions}
-  </select>
+  <div class="lang-dropdown" id="langDropdown">
+    <button type="button" class="lang-trigger" id="langTrigger" onclick="toggleLangMenu(event)" title="${escape(s.langMenu || "Language")}" aria-haspopup="listbox" aria-expanded="false">
+      <span class="lang-globe" aria-hidden="true">⌖</span>
+      <span class="lang-trigger-label">${escape(current.label)}</span>
+      <span class="lang-caret" aria-hidden="true">▾</span>
+    </button>
+    <div class="lang-menu" id="langMenu" role="listbox">
+      ${langItems}
+    </div>
+  </div>
 </div>`;
 }
 
