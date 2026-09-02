@@ -172,7 +172,7 @@ module.exports = function getStyles() {
   /* Table */
   table { width: 100%; border-collapse: collapse; }
 
-  th {
+  thead th {
     text-align: left;
     padding: 7px 12px;
     font-size: 11px;
@@ -183,10 +183,14 @@ module.exports = function getStyles() {
     border-bottom: 1px solid var(--border);
     cursor: pointer;
     user-select: none;
+    background: var(--bg);
+  }
+
+  thead {
     position: sticky;
     top: 72px;
-    background: var(--bg);
     z-index: 5;
+    background: var(--bg);
   }
 
   th:hover { opacity: 0.8; }
@@ -207,7 +211,7 @@ module.exports = function getStyles() {
     user-select: none;
   }
   .resize-handle:hover { background: var(--accent); opacity: 0.6; }
-  th { position: sticky; } /* ensure handle positioning works (already set above but reaffirmed) */
+  thead th { position: relative; } /* anchor for the absolutely-positioned resize handle */
   body.resizing-col { cursor: col-resize !important; user-select: none; }
   body.resizing-col * { cursor: col-resize !important; }
 
