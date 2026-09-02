@@ -724,8 +724,12 @@ module.exports = function getScript(strings = {}) {
   function closeDetails() {
     detailsPid = null;
     detailsKind = "process";
-    elements.detailsPanel().style.display = "none";
-    if (elements.detailsTitle) elements.detailsTitle().textContent = T.detailsTitle;
+    const panel = elements.detailsPanel();
+    if (panel) panel.style.display = "none";
+    try {
+      const titleEl = elements.detailsTitle && elements.detailsTitle();
+      if (titleEl) titleEl.textContent = T.detailsTitle;
+    } catch {}
   }
 
   function renderDetails(pid, data, error) {
@@ -1051,6 +1055,16 @@ module.exports = function getScript(strings = {}) {
   window.processAction = processAction;
 
   initColumnInteractions();
+
+  // Wire the close button with addEventListener so it doesn't depend on
+  // inline onclick resolving through window globals (some webview contexts
+  // strip inline handlers via CSP). We stop propagation so the click doesn't
+  // bubble to the row underneath (which would re-open the panel).
+  const closeBtn = document.getElementById("detailsCloseBtn");
+  if (closeBtn) closeBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    closeDetails();
+  });
 
   vscode.postMessage({ command: "refresh" });
   scheduleNextRefresh(0);
