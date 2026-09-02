@@ -169,6 +169,25 @@ async function handleProcessDetails(webview, pid, witrAvailability) {
       return;
     }
     const p = raw.Process || {};
+    // Normalize WITR's PascalCase + nested shapes into the simple camelCase
+    // contract the webview expects, so the renderers never receive a raw
+    // object/array and have to stringify it (which produces "[object Object]").
+    const ancestry = (raw.Ancestry || []).map((node) => ({
+      name: (node && (node.Command || node.name)) || "?",
+      pid: (node && (node.PID ?? node.pid)) ?? null,
+    }));
+    const source = raw.Source && typeof raw.Source === "object"
+      ? (raw.Source.Description || raw.Source.Name || raw.Source.Type || "")
+      : (raw.Source || "");
+    const sockets = (raw.SocketInfo || []).map((s) => ({
+      address: s && (s.Address || s.address || s.bind || ""),
+      port: s && (s.Port ?? s.port),
+      state: s && (s.State || s.state || ""),
+      protocol: s && (s.Protocol || s.protocol || ""),
+    }));
+    const environment = (raw.FileContext && raw.FileContext.environment)
+      || raw.Environment
+      || {};
     const data = {
       pid: p.PID,
       ppid: p.PPID,
@@ -183,11 +202,11 @@ async function handleProcessDetails(webview, pid, witrAvailability) {
       gitBranch: p.GitBranch,
       container: p.Container,
       service: p.Service,
-      ancestry: raw.Ancestry || [],
-      source: raw.Source,
-      sockets: raw.SocketInfo || [],
+      ancestry,
+      source,
+      sockets,
       warnings: raw.Warnings || [],
-      environment: raw.FileContext?.environment || raw.Environment || {},
+      environment,
     };
     webview.postMessage({ type: "processDetails", pid, data });
   } catch (e) {

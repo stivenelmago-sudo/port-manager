@@ -662,6 +662,11 @@ module.exports = function getScript(strings = {}) {
     const ancestryHtml = renderAncestryTree(data.ancestry || []);
     const envHtml = renderEnvTable(data.environment || {});
     const socketsHtml = renderSocketsList(data.sockets || []);
+    const safeStr = (v, fallback) => {
+      if (v == null) return fallback;
+      if (typeof v === "object") return JSON.stringify(v);
+      return String(v);
+    };
     const html =
       '<div class="details-grid">' +
         '<div class="details-section">' +
@@ -670,23 +675,23 @@ module.exports = function getScript(strings = {}) {
         "</div>" +
         '<div class="details-section">' +
           '<div class="details-label">' + escapeHtml(T.detailsCommand) + "</div>" +
-          '<div class="details-code">' + escapeHtml(data.process || data.command || "-") + "</div>" +
+          '<div class="details-code">' + escapeHtml(safeStr(data.process || data.command, "-")) + "</div>" +
         "</div>" +
         '<div class="details-section">' +
           '<div class="details-label">' + escapeHtml(T.detailsUser) + "</div>" +
-          '<div>' + escapeHtml(data.user || "-") + "</div>" +
+          '<div>' + escapeHtml(safeStr(data.user, "-")) + "</div>" +
         "</div>" +
         '<div class="details-section">' +
           '<div class="details-label">' + escapeHtml(T.detailsStarted) + "</div>" +
-          '<div>' + escapeHtml(data.started || data.start_time || "-") + "</div>" +
+          '<div>' + escapeHtml(safeStr(data.started || data.start_time, "-")) + "</div>" +
         "</div>" +
         '<div class="details-section">' +
           '<div class="details-label">' + escapeHtml(T.detailsSource) + "</div>" +
-          '<div>' + escapeHtml(data.source || "-") + "</div>" +
+          '<div>' + escapeHtml(safeStr(data.source, "-")) + "</div>" +
         "</div>" +
         '<div class="details-section">' +
           '<div class="details-label">' + escapeHtml(T.detailsCwd) + "</div>" +
-          '<div class="details-code">' + escapeHtml(data.cwd || data.working_dir || "-") + "</div>" +
+          '<div class="details-code">' + escapeHtml(safeStr(data.cwd || data.working_dir, "-")) + "</div>" +
         "</div>" +
         '<div class="details-section details-section-wide">' +
           '<div class="details-label">' + escapeHtml(T.detailsSockets) + "</div>" +
@@ -702,9 +707,9 @@ module.exports = function getScript(strings = {}) {
 
   function renderAncestryTree(ancestry) {
     if (!ancestry || ancestry.length === 0) return '<div class="ancestry-none">' + escapeHtml(T.ancestryNone) + "</div>";
-    return '<ul class="tree">' + ancestry.map((node, i) => {
-      const name = node.name || node;
-      const pid = node.pid || "";
+    return '<ul class="tree">' + ancestry.map((node) => {
+      const name = (node && (node.name || node.Command)) || "?";
+      const pid = (node && (node.pid ?? node.PID)) || "";
       return '<li><span class="tree-node">' +
         '<span class="tree-name">' + escapeHtml(name) + '</span>' +
         (pid ? '<span class="tree-pid">pid ' + pid + "</span>" : "") +
@@ -713,11 +718,12 @@ module.exports = function getScript(strings = {}) {
   }
 
   function renderEnvTable(env) {
-    const keys = Object.keys(env || {});
+    if (!env || typeof env !== "object") return '<div class="ancestry-none">-</div>';
+    const keys = Object.keys(env);
     if (keys.length === 0) return '<div class="ancestry-none">-</div>';
     let html = '<table class="env-table"><tbody>';
     for (const k of keys) {
-      const v = String(env[k]);
+      const v = env[k] == null ? "" : (typeof env[k] === "object" ? JSON.stringify(env[k]) : String(env[k]));
       const display = v.length > 200 ? v.substring(0, 200) + "…" : v;
       html += '<tr><td class="env-key">' + escapeHtml(k) + '</td><td class="env-val">' + escapeHtml(display) + "</td></tr>";
     }
@@ -728,9 +734,13 @@ module.exports = function getScript(strings = {}) {
   function renderSocketsList(sockets) {
     if (!sockets || sockets.length === 0) return '<div class="ancestry-none">-</div>';
     return '<ul class="sockets">' + sockets.map((s) => {
-      const addr = s.address || s.bind || s.local || JSON.stringify(s);
+      if (!s || typeof s !== "object") return '<li>' + escapeHtml(String(s)) + "</li>";
+      const port = s.port != null ? ":" + s.port : "";
+      const addr = s.address || s.bind || s.local || "";
+      const proto = s.protocol ? " " + s.protocol : "";
       const state = s.state || "";
-      return '<li>' + escapeHtml(addr) + (state ? ' <span class="socket-state">' + escapeHtml(state) + "</span>" : "") + "</li>";
+      const label = (addr ? addr + port : JSON.stringify(s)) + proto;
+      return '<li>' + escapeHtml(label) + (state ? ' <span class="socket-state">' + escapeHtml(state) + "</span>" : "") + "</li>";
     }).join("") + "</ul>";
   }
 
