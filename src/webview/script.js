@@ -135,6 +135,9 @@ module.exports = function getScript(strings = {}) {
       case "processes":
         processes = msg.processes || [];
         if (currentTab === "processes") render();
+        if (msg.witr && msg.witr.status && msg.witr.status !== "available" && msg.witr.hint) {
+          showOnce(msg.witr.status, T.witrMissing + " — " + msg.witr.hint);
+        }
         scheduleNextRefresh();
         break;
       case "containers":
@@ -196,6 +199,10 @@ module.exports = function getScript(strings = {}) {
     });
     // Toggle main table vs side panels.
     elements.mainTable().style.display = tab === "ports" || tab === "processes" ? "" : "none";
+    // Show / hide per-tab columns in the shared table.
+    document.querySelectorAll("#mainTable thead th[data-tab]").forEach((th) => {
+      th.style.display = th.dataset.tab === tab ? "" : "none";
+    });
     const containersPanel = document.getElementById("containersPanel");
     const locksPanel = document.getElementById("locksPanel");
     if (containersPanel) containersPanel.style.display = tab === "containers" ? "block" : "none";
@@ -523,9 +530,15 @@ module.exports = function getScript(strings = {}) {
     } else {
       const cpu = p.cpu != null ? (p.cpu.toFixed(1) + "%") : "-";
       const mem = formatMemory(p.memory);
+      const portLabel = p.port ? '<span class="port-num">:' + p.port + "</span>" : "-";
+      const ancestryHtml = p.ancestry
+        ? '<span class="ancestry-chain" title="' + escapeHtml(p.ancestry) + '">' + escapeHtml(truncate(p.ancestry, 60)) + "</span>"
+        : '<span class="ancestry-none">' + escapeHtml(T.ancestryNone) + "</span>";
       cells =
         '<td class="process-name">' + escapeHtml(p.name || p.process || "-") + "</td>" +
         '<td class="pid">' + (p.pid || "-") + "</td>" +
+        '<td class="port-cell">' + portLabel + "</td>" +
+        '<td class="ancestry">' + ancestryHtml + "</td>" +
         '<td class="cpu">' + cpu + "</td>" +
         '<td class="memory">' + mem + "</td>" +
         '<td class="command" title="' + escapeHtml(p.command || "") + '">' + escapeHtml(truncate(p.command || "", 60)) + "</td>";

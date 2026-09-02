@@ -227,6 +227,8 @@ function getTable(s) {
       <th data-sort="process" data-tab="ports" onclick="sortBy('process')">${escape(s.colProcess)}</th>
       <th data-sort="pid" data-tab="ports" onclick="sortBy('pid')">${escape(s.colPid)}</th>
       <th data-sort="ancestry" data-tab="ports" onclick="sortBy('ancestry')">${escape(s.colAncestry)}</th>
+      <th data-sort="port" data-tab="processes" onclick="sortBy('port')" style="display:none">${escape(s.colPort)}</th>
+      <th data-sort="ancestry" data-tab="processes" onclick="sortBy('ancestry')" style="display:none">${escape(s.colAncestry)}</th>
       <th data-sort="cpu" data-tab="processes" onclick="sortBy('cpu')" style="display:none">${escape(s.colCpu)}</th>
       <th data-sort="memory" data-tab="processes" onclick="sortBy('memory')" style="display:none">${escape(s.colMemory)}</th>
       <th data-sort="cmd" data-tab="processes" onclick="sortBy('cmd')" style="display:none">${escape(s.colCommand)}</th>
