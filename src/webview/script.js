@@ -349,6 +349,7 @@ module.exports = function getScript(strings = {}) {
       const f = filter.toLowerCase();
       return [l.path, l.pid, l.fd, l.type].join(" ").toLowerCase().includes(f);
     });
+    renderStats();
     list.sort((a, b) => {
       let cmp = 0;
       const col = currentSort.col;
@@ -373,13 +374,36 @@ module.exports = function getScript(strings = {}) {
   }
 
   function renderLockRow(l) {
+    const type = (l.type || "-").toUpperCase();
+    const typeClass = "lock-type-" + type.toLowerCase().replace(/[^a-z]/g, "");
+    const rw = (l.rw || "").toUpperCase();
+    const rwClass = rw === "WRITE" ? "lock-rw-write"
+                  : rw === "READ" ? "lock-rw-read"
+                  : rw === "UNLCK" ? "lock-rw-unlck"
+                  : "lock-rw-none";
+    const path = l.path || "";
+    const pathDisplay = path && path !== "-" ? truncate(path, 70) : "-";
+    const pidDisplay = l.pid ? '<span class="lock-pid">' + l.pid + "</span>" : "-";
+    const fdDisplay = l.fd != null
+      ? '<span class="lock-fd">fd ' + escapeHtml(String(l.fd)) + "</span>"
+      : '<span class="lock-missing">-</span>';
+    const inodeDisplay = l.inode != null
+      ? '<span class="lock-inode">' + escapeHtml(String(l.inode)) + "</span>"
+      : '<span class="lock-missing">-</span>';
+    const mode = l.mode || "";
     return (
       '<tr>' +
-        '<td><span class="badge badge-runtime">' + escapeHtml(l.type || "-") + "</span></td>" +
-        "<td>" + (l.pid || "-") + "</td>" +
-        '<td class="pid">' + escapeHtml(l.fd || "-") + "</td>" +
-        '<td class="command" title="' + escapeHtml(l.path || "") + '">' + escapeHtml(l.path || "-") + "</td>" +
-        "<td>" + (l.inode || "-") + "</td>" +
+        '<td class="lock-cell-type">' +
+          '<span class="badge ' + typeClass + '">' + escapeHtml(type) + "</span>" +
+          (mode ? '<span class="lock-mode">' + escapeHtml(mode) + "</span>" : "") +
+        "</td>" +
+        '<td>' + pidDisplay + "</td>" +
+        '<td>' + fdDisplay + "</td>" +
+        '<td class="lock-cell-path">' +
+          (rw ? '<span class="badge ' + rwClass + '">' + escapeHtml(rw) + "</span>" : "") +
+          '<span class="lock-path" title="' + escapeHtml(path) + '">' + escapeHtml(pathDisplay) + "</span>" +
+        "</td>" +
+        '<td>' + inodeDisplay + "</td>" +
       "</tr>"
     );
   }
@@ -563,6 +587,29 @@ module.exports = function getScript(strings = {}) {
         '<span><span class="dot" style="background:#FF5252"></span> ' + T.statsUsed + " " + listenCount + "</span>" +
         ancestrySpan +
         "<span>" + T.statsTotal + " " + total + "</span>";
+    } else if (currentTab === "locks") {
+      const total = locks.length;
+      const byType = locks.reduce((acc, l) => {
+        const k = (l.type || "?").toUpperCase();
+        acc[k] = (acc[k] || 0) + 1;
+        return acc;
+      }, {});
+      const byRw = locks.reduce((acc, l) => {
+        const k = (l.rw || "?").toUpperCase();
+        acc[k] = (acc[k] || 0) + 1;
+        return acc;
+      }, {});
+      const typeChips = Object.entries(byType).map(([k, n]) =>
+        '<span class="stat-chip">' + escapeHtml(k) + ' <strong>' + n + "</strong></span>"
+      ).join("");
+      const rwChips = Object.entries(byRw).map(([k, n]) =>
+        '<span class="stat-chip stat-rw-' + k.toLowerCase() + '">' + escapeHtml(k) + ' <strong>' + n + "</strong></span>"
+      ).join("");
+      elements.stats().innerHTML =
+        '<span>' + T.tabLocks + "</span>" +
+        '<span>' + T.statsTotal + " " + total + "</span>" +
+        (typeChips ? '<span class="stat-chips">' + typeChips + "</span>" : "") +
+        (rwChips ? '<span class="stat-chips">' + rwChips + "</span>" : "");
     } else {
       const total = processes.length;
       elements.stats().innerHTML =

@@ -766,5 +766,157 @@ module.exports = function getStyles() {
     opacity: 0.85;
     cursor: pointer;
   }
+
+  /* Locks panel — refined row layout */
+  #locksTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  #locksTable thead th {
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+  #locksTable tbody tr {
+    transition: background 100ms;
+  }
+  #locksTable tbody tr:hover { background: var(--hover); }
+  #locksTable td { padding: 6px 12px; vertical-align: middle; }
+
+  .lock-cell-type {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .lock-cell-path {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 0;
+  }
+
+  /* Type badges (FLOCK / POSIX / OFDLCK) */
+  .badge.lock-type-flock {
+    background: rgba(0, 122, 204, 0.18);
+    color: #58a6ff;
+    border: 1px solid rgba(88, 166, 255, 0.35);
+  }
+  .badge.lock-type-posix {
+    background: rgba(204, 167, 0, 0.18);
+    color: #f0c674;
+    border: 1px solid rgba(240, 198, 116, 0.35);
+  }
+  .badge.lock-type-ofdlck {
+    background: rgba(56, 138, 52, 0.22);
+    color: #7ec97e;
+    border: 1px solid rgba(126, 201, 126, 0.4);
+  }
+  .badge.lock-type-other {
+    background: var(--vscode-badge-background, #4d4d4d);
+    color: var(--vscode-badge-foreground, #fff);
+  }
+  .lock-mode {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: var(--fg);
+    opacity: 0.55;
+    padding: 1px 5px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+  }
+
+  /* R/W badges inside path cell */
+  .badge.lock-rw-write {
+    background: rgba(255, 82, 82, 0.18);
+    color: #ff7b7b;
+    border: 1px solid rgba(255, 123, 123, 0.4);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+  .badge.lock-rw-read {
+    background: rgba(0, 230, 118, 0.16);
+    color: #6fdc8c;
+    border: 1px solid rgba(111, 220, 140, 0.4);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+  .badge.lock-rw-unlck {
+    background: var(--input-bg);
+    color: var(--fg);
+    opacity: 0.5;
+    border: 1px solid var(--border);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+  .badge.lock-rw-none {
+    display: none;
+  }
+
+  .lock-path {
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+  }
+  .lock-pid {
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 11px;
+    padding: 2px 6px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .lock-pid:hover { border-color: var(--accent); color: var(--accent); }
+  .lock-fd {
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 10px;
+    padding: 2px 6px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+  }
+  .lock-inode {
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 10px;
+    opacity: 0.7;
+  }
+  .lock-missing {
+    opacity: 0.3;
+    font-size: 11px;
+  }
+
+  /* Stats chips for locks */
+  .stat-chips {
+    display: inline-flex;
+    gap: 6px;
+    margin-left: 4px;
+  }
+  .stat-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 10px;
+    letter-spacing: 0.3px;
+    opacity: 0.85;
+  }
+  .stat-chip strong { font-weight: 700; color: var(--accent); }
+  .stat-chip.stat-rw-write strong { color: #ff7b7b; }
+  .stat-chip.stat-rw-read strong { color: #6fdc8c; }
 `;
 };
