@@ -810,6 +810,25 @@ module.exports = function getScript(strings = {}) {
   }
 
   // ─── Init ────────────────────────────────────────────────────────
+  // Expose handlers used by inline onclick="..." attributes on dynamically
+  // rendered rows / panels so the global lookup window.<name> resolves.
+  // Without this, onclick attributes silently fail (function not defined).
+  window.closeDetails = closeDetails;
+  window.refresh = refresh;
+  window.sortBy = sortBy;
+  window.togglePort = togglePort;
+  window.toggleAll = toggleAll;
+  window.startKill = startKill;
+  window.cancelKill = cancelKill;
+  window.confirmKill = confirmKill;
+  window.rowClicked = rowClicked;
+  window.bulkKill = bulkKill;
+  window.toggleScan = toggleScan;
+  window.scanRange = scanRange;
+  window.changeLang = changeLang;
+  window.containerAction = containerAction;
+  window.processAction = processAction;
+
   vscode.postMessage({ command: "refresh" });
   scheduleNextRefresh(0);
 `;
