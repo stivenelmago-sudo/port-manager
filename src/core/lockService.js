@@ -18,10 +18,12 @@ const execFileP = promisify(execFile);
 
 /**
  * Parse /proc/locks (Linux only).
- * Each line: <lock-type> <lock-mode> <lock-pid> <lock-start>:<lock-end> <lock-inode>
- *   lock-type: FLOCK | OFDLCK | POSIX
- *   lock-mode: ADVISORY | MANDATORY
- *   lock-mode: READ | WRITE | UNLCK
+ * Each line: <ordinal>: <type> <scope> <rw> <pid> <major:minor:inode> <bytes> [EOF]
+ *   type:      FLOCK | OFDLCK | POSIX
+ *   scope:     ADVISORY | MANDATORY
+ *   rw:        READ | WRITE | UNLCK
+ *   pid:       owning PID
+ *   inode:     <major>:<minor>:<inode>
  */
 async function listLocksLinux() {
   const text = await fs.readFile("/proc/locks", "utf8").catch(() => "");
@@ -29,47 +31,57 @@ async function listLocksLinux() {
   for (const rawLine of text.split(/\r?\n/)) {
     const line = rawLine.trim();
     if (!line) continue;
-    const parts = line.split(/\s+/);
-    if (parts.length < 5) continue;
-    const [typeRaw, modeRaw, pidRaw, range, inodeRaw] = parts;
-    const mode = (modeRaw || "").replace("ADVISORY", "ADV").replace("MANDATORY", "MAN");
-    const rw = mode.replace(/^(ADV|MAN)/, "");
+    // Strip the leading "<n>:" ordinal token (kernel-added since Linux 2.6.x).
+    const colonIdx = line.indexOf(":");
+    if (colonIdx === -1) continue;
+    const afterOrdinal = line.slice(colonIdx + 1).trim();
+    const parts = afterOrdinal.split(/\s+/);
+    if (parts.length < 6) continue;
+    const [typeRaw, scopeRaw, rwRaw, pidRaw, range, inodeRaw] = parts;
+    const scope = (scopeRaw || "").replace("ADVISORY", "ADV").replace("MANDATORY", "MAN");
     const pid = parseInt(pidRaw, 10);
     const inode = parseInt(inodeRaw, 10);
     out.push({
       type: typeRaw,
-      mode,
-      rw,
+      mode: scope,
+      rw: rwRaw,
       pid,
       range,
       inode,
-      fd: lookupFd(pid, inode).catch(() => null),
+      fd: null,
     });
   }
-  // Resolve file paths from /proc/<pid>/fd/<n>
+  // Resolve file paths from /proc/<pid>/fd/* and resolve the fd number
+  // for each lock (the symlink that targets the matching inode).
   await Promise.all(out.map(async (l) => {
-    try { l.path = await resolveFdPath(l.pid, l.inode); }
-    catch { l.path = null; }
+    try {
+      const { path: filePath, fd } = await resolveFdInfo(l.pid, l.inode);
+      l.path = filePath;
+      l.fd = fd;
+    } catch {
+      l.path = null;
+      l.fd = null;
+    }
   }));
   return out;
 }
 
-async function resolveFdPath(pid, inode) {
-  // Scan /proc/<pid>/fd/* for a symlink pointing to the inode.
+/**
+ * Scan /proc/<pid>/fd/* for a symlink whose target points at `inode`.
+ * Returns both the resolved path and the fd number (string) when found.
+ */
+async function resolveFdInfo(pid, inode) {
   const fdDir = `/proc/${pid}/fd`;
   const entries = await fs.readdir(fdDir).catch(() => []);
   for (const fd of entries) {
     const target = await fs.readlink(`${fdDir}/${fd}`).catch(() => "");
     // target looks like "/some/path" or "socket:[12345]" or "pipe:[...]"
     const m = target.match(/\[(\d+)\]$/);
-    if (m && parseInt(m[1], 10) === inode) return target;
+    if (m && parseInt(m[1], 10) === inode) {
+      return { path: target, fd };
+    }
   }
-  return null;
-}
-
-async function lookupFd(_pid, _inode) {
-  // Reserved for future fd-level lookup via /proc/<pid>/fdinfo/<n>.
-  return null;
+  return { path: null, fd: null };
 }
 
 /**

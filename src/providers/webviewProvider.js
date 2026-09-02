@@ -204,6 +204,15 @@ async function handleRefreshContainers(webview) {
   }
 }
 
+async function handleRefreshLocks(webview) {
+  try {
+    const locks = await listLocks();
+    webview.postMessage({ type: "locks", locks });
+  } catch (e) {
+    webview.postMessage({ type: "locks", locks: [], error: e.message });
+  }
+}
+
 async function handleContainerDetails(webview, runtime, id) {
   try {
     const data = await inspectContainer(runtime, id);
