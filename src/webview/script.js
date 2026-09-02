@@ -1059,12 +1059,19 @@ module.exports = function getScript(strings = {}) {
   // Wire the close button with addEventListener so it doesn't depend on
   // inline onclick resolving through window globals (some webview contexts
   // strip inline handlers via CSP). We stop propagation so the click doesn't
-  // bubble to the row underneath (which would re-open the panel).
+  // bubble to the row underneath (which would re-open the panel and feel
+  // like a "loop" to the user).
   const closeBtn = document.getElementById("detailsCloseBtn");
   if (closeBtn) closeBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     closeDetails();
   });
+  // Stop clicks anywhere on the panel from re-triggering the row underneath.
+  const detailsPanel = document.getElementById("detailsPanel");
+  if (detailsPanel) {
+    detailsPanel.addEventListener("click", (e) => e.stopPropagation());
+    detailsPanel.addEventListener("mousedown", (e) => e.stopPropagation());
+  }
 
   vscode.postMessage({ command: "refresh" });
   scheduleNextRefresh(0);
