@@ -98,6 +98,8 @@ module.exports = function getScript(strings = {}) {
   let confirmingKill = null;
   let detailsPid = null;
   let detailsKind = "process";
+  let detailsRuntime = null;
+  let detailsLastData = null;
   let locksShowAllOpen = false;
 
   // Default column order per tab (matches the static header layout in
@@ -388,18 +390,30 @@ module.exports = function getScript(strings = {}) {
 
   function renderContainerDetails(runtime, id, data, error) {
     openDetails(id, "container");
+    detailsRuntime = runtime;
     if (error || !data) {
+      if (detailsLastData) return;
       elements.detailsBody().innerHTML =
         '<div class="details-empty">' + escapeHtml(T.detailsNotAvailable) + (error ? " (" + escapeHtml(error) + ")" : "") + "</div>";
       return;
     }
+    detailsLastData = data;
+    elements.detailsBody().innerHTML = renderContainerDetailsBody(data);
+  }
+
+  function renderContainerDetailsFromCache(runtime, id, data) {
+    if (id !== detailsPid) return;
+    if (!data) return;
+    elements.detailsBody().innerHTML = renderContainerDetailsBody(data);
+  }
+
+  function renderContainerDetailsBody(data) {
     const mounts = (data.Mounts || []).map((m) => m.Source + " → " + (m.Destination || m.Target || "?")).join("<br>");
     const networks = Object.keys(data.NetworkSettings?.Networks || {}).join(", ");
     const env = Object.entries(data.Config?.Env || []).slice(0, 30).map(([k, v]) =>
       '<tr><td class="env-key">' + escapeHtml(k) + '</td><td class="env-val">' + escapeHtml(v) + "</td></tr>"
     ).join("");
-    const html =
-      '<div class="details-grid">' +
+    return '<div class="details-grid">' +
         '<div class="details-card details-section-wide">' +
           '<div class="details-label">Image</div>' +
           '<div class="details-code">' + escapeHtml(data.Config?.Image || "-") + "</div>" +
@@ -425,7 +439,6 @@ module.exports = function getScript(strings = {}) {
           '<table class="env-table"><tbody>' + env + "</tbody></table>" +
         "</div>" +
       "</div>";
-    elements.detailsBody().innerHTML = html;
   }
 
   function renderContainerOutput(runtime, id, action, output) {
@@ -489,8 +502,18 @@ module.exports = function getScript(strings = {}) {
     renderTable(list);
     updateBulkKillButton();
     updateSortIndicators();
-    // If a details panel was open, refresh its content
-    if (detailsPid && currentTab !== "ports") renderDetails(detailsPid, null, null);
+    // If a details panel is open, keep its body populated. We do not re-fetch
+    // from the host on every refresh (that is expensive); instead the last
+    // successful data is re-rendered if we have it cached. The renderDetails
+    // call below is a no-op when no data is cached yet and detailsPid was set
+    // moments ago — the openDetails() request is already in flight.
+    if (detailsPid && detailsLastData) {
+      if (detailsKind === "process") {
+        renderDetailsFromCache(detailsPid, detailsLastData);
+      } else if (detailsKind === "container") {
+        renderContainerDetailsFromCache(detailsRuntime, detailsPid, detailsLastData);
+      }
+    }
   }
 
   function filterAndSort() {
@@ -697,6 +720,7 @@ module.exports = function getScript(strings = {}) {
   function openDetails(pid, kind = "process") {
     detailsPid = pid;
     detailsKind = kind;
+    detailsLastData = null;
     elements.detailsPanel().style.display = "flex";
     elements.detailsTitle().textContent =
       kind === "container" ? T.detailsTitleContainer
@@ -730,6 +754,8 @@ module.exports = function getScript(strings = {}) {
   function closeDetails() {
     detailsPid = null;
     detailsKind = "process";
+    detailsRuntime = null;
+    detailsLastData = null;
     const panel = elements.detailsPanel();
     if (panel) panel.style.display = "none";
     try {
@@ -741,10 +767,25 @@ module.exports = function getScript(strings = {}) {
   function renderDetails(pid, data, error) {
     if (pid !== detailsPid) return;
     if (error || !data) {
+      // Do not blow away previously-good data with a transient empty payload
+      // (e.g. from a tab-switch race during refresh). Only render the error
+      // state when we have no cached data to fall back on.
+      if (detailsLastData) return;
       elements.detailsBody().innerHTML =
         '<div class="details-empty">' + escapeHtml(T.detailsNotAvailable) + (error ? " (" + escapeHtml(error) + ")" : "") + "</div>";
       return;
     }
+    detailsLastData = data;
+    elements.detailsBody().innerHTML = renderProcessDetailsBody(data);
+  }
+
+  function renderDetailsFromCache(pid, data) {
+    if (pid !== detailsPid) return;
+    if (!data) return;
+    elements.detailsBody().innerHTML = renderProcessDetailsBody(data);
+  }
+
+  function renderProcessDetailsBody(data) {
     const ancestryHtml = renderAncestryTree(data.ancestry || []);
     const envHtml = renderEnvTable(data.environment || {});
     const socketsHtml = renderSocketsList(data.sockets || []);
@@ -753,8 +794,7 @@ module.exports = function getScript(strings = {}) {
       if (typeof v === "object") return JSON.stringify(v);
       return String(v);
     };
-    const html =
-      '<div class="details-grid">' +
+    return '<div class="details-grid">' +
         '<div class="details-card details-section-wide">' +
           '<div class="details-label">' + escapeHtml(T.detailsAncestry) + "</div>" +
           ancestryHtml +
@@ -788,7 +828,6 @@ module.exports = function getScript(strings = {}) {
           envHtml +
         "</div>" +
       "</div>";
-    elements.detailsBody().innerHTML = html;
   }
 
   function renderAncestryTree(ancestry) {
