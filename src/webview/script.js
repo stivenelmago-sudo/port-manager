@@ -158,7 +158,7 @@ module.exports = function getScript(strings = {}) {
         scheduleNextRefresh();
         break;
       case "processDetails":
-        renderDetails(msg.pid, ok ? null : msg.data, msg.error);
+        renderDetails(msg.pid, msg.data, msg.error);
         break;
       case "processActionResult":
         if (msg.ok) showToast(msg.action + " → pid " + msg.pid + ": OK", "success");
@@ -545,9 +545,13 @@ module.exports = function getScript(strings = {}) {
     }
 
     const actionHtml = renderActionButtons(p, isConfirming);
+    // Click → open details for the owning PID. We pass the PID (not the port)
+    // so the backend looks up the actual process via witr. Container rows pass
+    // the container id and let rowClicked() route them.
+    const detailId = isPort ? (p.pid || p.port) : (p.pid || port);
 
     return (
-      '<tr class="' + (isSelected ? "selected" : "") + '" onclick="rowClicked(' + port + ', event)">' +
+      '<tr class="' + (isSelected ? "selected" : "") + '" onclick="rowClicked(' + detailId + ', event)">' +
       '<td class="col-select"><input type="checkbox" ' + (isSelected ? "checked" : "") +
       ' onchange="togglePort(' + port + ')"></td>' +
       cells +
