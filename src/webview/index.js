@@ -248,7 +248,11 @@ function getDetailsPanel(s) {
   return /*html*/ `
 <div class="details-panel" id="detailsPanel" style="display:none">
   <div class="details-header">
-    <span class="details-title">${escape(s.detailsTitle)}</span>
+    <span class="details-header-left">
+      <span class="details-title-icon" aria-hidden="true">▶</span>
+      <span class="details-title" id="detailsTitle">${escape(s.detailsTitle)}</span>
+      <span class="details-title-pid" id="detailsPidBadge" style="display:none"></span>
+    </span>
     <button class="details-close" id="detailsCloseBtn" type="button" aria-label="Close">×</button>
   </div>
   <div class="details-body" id="detailsBody">

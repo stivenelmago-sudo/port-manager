@@ -400,27 +400,27 @@ module.exports = function getScript(strings = {}) {
     ).join("");
     const html =
       '<div class="details-grid">' +
-        '<div class="details-section details-section-wide">' +
+        '<div class="details-card details-section-wide">' +
           '<div class="details-label">Image</div>' +
           '<div class="details-code">' + escapeHtml(data.Config?.Image || "-") + "</div>" +
         "</div>" +
-        '<div class="details-section">' +
+        '<div class="details-card details-section">' +
           '<div class="details-label">State</div>' +
-          '<div>' + escapeHtml(data.State?.Status || "-") + "</div>" +
+          '<div class="details-value">' + escapeHtml(data.State?.Status || "-") + "</div>" +
         "</div>" +
-        '<div class="details-section">' +
+        '<div class="details-card details-section">' +
           '<div class="details-label">Command</div>' +
           '<div class="details-code">' + escapeHtml(JSON.stringify(data.Config?.Cmd || [])) + "</div>" +
         "</div>" +
-        '<div class="details-section details-section-wide">' +
+        '<div class="details-card details-section-wide">' +
           '<div class="details-label">Mounts</div>' +
           '<div class="details-code">' + (mounts || "-") + "</div>" +
         "</div>" +
-        '<div class="details-section details-section-wide">' +
+        '<div class="details-card details-section-wide">' +
           '<div class="details-label">Networks</div>' +
-          '<div>' + escapeHtml(networks || "-") + "</div>" +
+          '<div class="details-value">' + escapeHtml(networks || "-") + "</div>" +
         "</div>" +
-        '<div class="details-section details-section-wide">' +
+        '<div class="details-card details-section-wide">' +
           '<div class="details-label">Env (first 30)</div>' +
           '<table class="env-table"><tbody>' + env + "</tbody></table>" +
         "</div>" +
@@ -702,6 +702,12 @@ module.exports = function getScript(strings = {}) {
       kind === "container" ? T.detailsTitleContainer
       : kind === "lock" ? T.detailsTitleLock
       : T.detailsTitle;
+    const pidBadge = document.getElementById("detailsPidBadge");
+    if (pidBadge) {
+      const showPid = kind === "process" && pid != null;
+      pidBadge.style.display = showPid ? "" : "none";
+      pidBadge.textContent = showPid ? "pid " + pid : "";
+    }
     elements.detailsBody().innerHTML =
       '<div class="details-loading">' + escapeHtml(T.detailsLoading) + "</div>";
     if (kind === "process") {
@@ -749,35 +755,35 @@ module.exports = function getScript(strings = {}) {
     };
     const html =
       '<div class="details-grid">' +
-        '<div class="details-section">' +
+        '<div class="details-card details-section-wide">' +
           '<div class="details-label">' + escapeHtml(T.detailsAncestry) + "</div>" +
           ancestryHtml +
         "</div>" +
-        '<div class="details-section">' +
+        '<div class="details-card details-section">' +
           '<div class="details-label">' + escapeHtml(T.detailsCommand) + "</div>" +
           '<div class="details-code">' + escapeHtml(safeStr(data.process || data.command, "-")) + "</div>" +
         "</div>" +
-        '<div class="details-section">' +
+        '<div class="details-card details-section">' +
           '<div class="details-label">' + escapeHtml(T.detailsUser) + "</div>" +
-          '<div>' + escapeHtml(safeStr(data.user, "-")) + "</div>" +
+          '<div class="details-value">' + escapeHtml(safeStr(data.user, "-")) + "</div>" +
         "</div>" +
-        '<div class="details-section">' +
+        '<div class="details-card details-section">' +
           '<div class="details-label">' + escapeHtml(T.detailsStarted) + "</div>" +
-          '<div>' + escapeHtml(safeStr(data.started || data.start_time, "-")) + "</div>" +
+          '<div class="details-value">' + escapeHtml(safeStr(data.started || data.start_time, "-")) + "</div>" +
         "</div>" +
-        '<div class="details-section">' +
+        '<div class="details-card details-section">' +
           '<div class="details-label">' + escapeHtml(T.detailsSource) + "</div>" +
-          '<div>' + escapeHtml(safeStr(data.source, "-")) + "</div>" +
+          '<div class="details-value">' + escapeHtml(safeStr(data.source, "-")) + "</div>" +
         "</div>" +
-        '<div class="details-section">' +
+        '<div class="details-card details-section">' +
           '<div class="details-label">' + escapeHtml(T.detailsCwd) + "</div>" +
           '<div class="details-code">' + escapeHtml(safeStr(data.cwd || data.working_dir, "-")) + "</div>" +
         "</div>" +
-        '<div class="details-section details-section-wide">' +
+        '<div class="details-card details-section-wide">' +
           '<div class="details-label">' + escapeHtml(T.detailsSockets) + "</div>" +
           socketsHtml +
         "</div>" +
-        '<div class="details-section details-section-wide">' +
+        '<div class="details-card details-section-wide">' +
           '<div class="details-label">' + escapeHtml(T.detailsEnv) + "</div>" +
           envHtml +
         "</div>" +
@@ -787,11 +793,13 @@ module.exports = function getScript(strings = {}) {
 
   function renderAncestryTree(ancestry) {
     if (!ancestry || ancestry.length === 0) return '<div class="ancestry-none">' + escapeHtml(T.ancestryNone) + "</div>";
-    return '<ul class="tree">' + ancestry.map((node) => {
+    const last = ancestry.length - 1;
+    return '<ul class="tree">' + ancestry.map((node, i) => {
       const name = (node && (node.name || node.Command)) || "?";
       const pid = (node && (node.pid ?? node.PID)) || "";
+      const cls = i === last ? "tree-current" : (i === 0 ? "tree-root" : "");
       return '<li><span class="tree-node">' +
-        '<span class="tree-name">' + escapeHtml(name) + '</span>' +
+        '<span class="tree-name ' + cls + '">' + escapeHtml(name) + '</span>' +
         (pid ? '<span class="tree-pid">pid ' + pid + "</span>" : "") +
         "</span></li>";
     }).join("") + "</ul>";
@@ -820,7 +828,7 @@ module.exports = function getScript(strings = {}) {
       const proto = s.protocol ? " " + s.protocol : "";
       const state = s.state || "";
       const label = (addr ? addr + port : JSON.stringify(s)) + proto;
-      return '<li>' + escapeHtml(label) + (state ? ' <span class="socket-state">' + escapeHtml(state) + "</span>" : "") + "</li>";
+      return '<li>' + escapeHtml(label) + (state ? ' <span class="socket-state state-' + escapeHtml(state.toLowerCase().replace(/\s+/g, "-")) + '">' + escapeHtml(state) + "</span>" : "") + "</li>";
     }).join("") + "</ul>";
   }
 
