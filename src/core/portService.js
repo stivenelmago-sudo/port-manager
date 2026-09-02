@@ -47,35 +47,55 @@ async function getListeningPortsEnriched(opts = {}) {
 }
 
 /**
- * Get listening ports on Unix-like systems (macOS, Linux)
+ * Get listening ports on Unix-like systems (macOS, Linux).
+ *
+ * Combines `lsof` and `ss` rather than using either as a fallback: on some
+ * Linux kernels `lsof -iTCP -sTCP:LISTEN -nP` silently omits certain sockets
+ * (e.g. localhost binds for processes with parens in the command name), while
+ * `ss -tlnp` still sees them. Merging both ensures we don't miss listeners.
+ * Entries are deduped by port; the entry with a real (non-null) PID wins.
+ *
  * @returns {Array<{port: number, pid: number, process: string}>}
  */
 function getPortsUnix() {
-  const ports = [];
+  const byPort = new Map();
 
-  // Try lsof first (works well on macOS)
-  if (tryLsof(ports)) {
-    return sortByPort(ports);
-  }
+  const merge = (rows) => {
+    for (const row of rows) {
+      const existing = byPort.get(row.port);
+      if (!existing) {
+        byPort.set(row.port, row);
+        continue;
+      }
+      // Prefer the entry with a real PID; if both have one, keep whichever
+      // has a non-empty process name.
+      const existingHasPid = existing.pid != null;
+      const newHasPid = row.pid != null;
+      if (!existingHasPid && newHasPid) {
+        byPort.set(row.port, row);
+      } else if (existingHasPid === newHasPid && row.process && row.process !== "unknown") {
+        byPort.set(row.port, row);
+      }
+    }
+  };
 
-  // Fallback to ss (common on Linux)
-  trySs(ports);
-  return sortByPort(ports);
+  merge(tryLsof());
+  merge(trySs());
+  return sortByPort(Array.from(byPort.values()));
 }
 
 /**
  * Try to get ports using lsof command
- * @param {Array} ports - Array to populate with port info
- * @returns {boolean} - True if successful
+ * @returns {Array<{port:number, pid:number|null, process:string}>}
  */
-function tryLsof(ports) {
+function tryLsof() {
+  const ports = [];
   try {
     const output = execSync("lsof -iTCP -sTCP:LISTEN -nP 2>/dev/null || true", {
       encoding: "utf-8",
       timeout: TIMEOUT.COMMAND,
     });
 
-    const seen = new Set();
     const lines = output.split("\n").slice(1); // Skip header
 
     for (const line of lines) {
@@ -86,27 +106,29 @@ function tryLsof(ports) {
       const pid = parseInt(parts[1], 10);
       const addressField = parts[8] || "";
       const portMatch = addressField.match(/:(\d+)$/);
-
       if (!portMatch) continue;
 
-      const port = parseInt(portMatch[1], 10);
-      if (seen.has(port)) continue;
+      // Skip kernel internal sockets (kthread/*) — they're never actionable.
+      if (/^kthread/i.test(process)) continue;
 
-      seen.add(port);
-      ports.push({ port, pid, process });
+      ports.push({
+        port: parseInt(portMatch[1], 10),
+        pid: Number.isFinite(pid) ? pid : null,
+        process: process || "unknown",
+      });
     }
-
-    return ports.length > 0;
   } catch {
-    return false;
+    // ignore
   }
+  return ports;
 }
 
 /**
  * Try to get ports using ss command (Linux)
- * @param {Array} ports - Array to populate with port info
+ * @returns {Array<{port:number, pid:number|null, process:string}>}
  */
-function trySs(ports) {
+function trySs() {
+  const ports = [];
   try {
     const output = execSync("ss -tlnp 2>/dev/null || true", {
       encoding: "utf-8",
@@ -123,13 +145,15 @@ function trySs(ports) {
       const portMatch = addressField.match(/:(\d+)$/);
       if (!portMatch) continue;
 
-      const port = parseInt(portMatch[1], 10);
-      const processField = parts[6] || "";
+      // The process field starts at parts[5] and may contain spaces (e.g.
+      // `users:(("ng serve (gskAp",pid=…)`); concatenate everything from
+      // parts[5] onward so regexes see the full token.
+      const processField = parts.slice(5).join(" ");
       const pidMatch = processField.match(/pid=(\d+)/);
       const nameMatch = processField.match(/\("([^"]+)"/);
 
       ports.push({
-        port,
+        port: parseInt(portMatch[1], 10),
         pid: pidMatch ? parseInt(pidMatch[1], 10) : null,
         process: nameMatch ? nameMatch[1] : "unknown",
       });
@@ -137,6 +161,7 @@ function trySs(ports) {
   } catch {
     // Silently fail - no ports available
   }
+  return ports;
 }
 
 /**
