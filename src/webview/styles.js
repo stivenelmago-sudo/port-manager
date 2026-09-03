@@ -39,11 +39,10 @@ module.exports = function getStyles() {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 12px;
+    padding: 8px 12px;
     border-bottom: 1px solid var(--border);
     background: var(--header-bg);
-    position: sticky;
-    top: 0;
+    position: relative;
     z-index: 12;
   }
   .sidebar-logo-svg {
@@ -78,8 +77,8 @@ module.exports = function getStyles() {
     gap: 0;
     border-bottom: 1px solid var(--border);
     background: var(--bg);
-    position: sticky;
-    top: 89px;
+    position: relative;
+    top: 0;
   }
   .tab {
     padding: 8px 14px;
@@ -90,7 +89,8 @@ module.exports = function getStyles() {
     cursor: pointer;
     font-family: inherit;
     font-size: 12px;
-    opacity: 0.7;
+    opacity: 1;
+    font-weight: 500;
     transition: opacity 0.15s, border-color 0.15s;
   }
   .tab:hover { opacity: 1; }
@@ -322,10 +322,9 @@ module.exports = function getStyles() {
   }
 
   thead {
-    position: sticky;
-    top: 72px;
-    z-index: 5;
-    background: var(--bg);
+    position: relative;
+    top: 0;
+    z-index: 11;
   }
 
   th:hover { opacity: 0.8; }
