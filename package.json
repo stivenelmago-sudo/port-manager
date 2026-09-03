@@ -108,7 +108,7 @@
         {
           "id": "portManager",
           "title": "%ext.displayName%",
-          "icon": "$(plug)"
+          "icon": "$(radio-tower)"
         }
       ]
     },

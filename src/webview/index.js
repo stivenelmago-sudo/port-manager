@@ -111,6 +111,7 @@ function getWebviewContent(strings = {}) {
   <style>${getStyles()}</style>
 </head>
 <body>
+  ${getLogoHeader()}
   ${getTabs(s)}
   ${getToolbar(s)}
   ${getScanPanel(s)}
@@ -124,6 +125,31 @@ function getWebviewContent(strings = {}) {
   <script>${getScript(s)}</script>
 </body>
 </html>`;
+}
+
+function getLogoHeader() {
+  return /*html*/ `
+<div class="sidebar-logo">
+  <svg class="sidebar-logo-svg" width="28" height="28" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-label="PortPilot" role="img">
+    <defs>
+      <linearGradient id="pp-grad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#00E676"/>
+        <stop offset="100%" stop-color="#00B0FF"/>
+      </linearGradient>
+    </defs>
+    <rect x="2" y="2" width="28" height="28" rx="7" fill="url(#pp-grad)"/>
+    <circle cx="16" cy="16" r="9" fill="none" stroke="#0A0A0F" stroke-width="2.2"/>
+    <path d="M11 16h10M16 11v10" stroke="#0A0A0F" stroke-width="2.2" stroke-linecap="round"/>
+    <circle cx="11" cy="16" r="1.8" fill="#0A0A0F"/>
+    <circle cx="21" cy="16" r="1.8" fill="#0A0A0F"/>
+    <circle cx="16" cy="11" r="1.8" fill="#0A0A0F"/>
+    <circle cx="16" cy="21" r="1.8" fill="#0A0A0F"/>
+  </svg>
+  <span class="sidebar-logo-text">
+    <span class="sidebar-logo-title">PortPilot</span>
+    <span class="sidebar-logo-sub">Port &amp; Process Manager</span>
+  </span>
+</div>`;
 }
 
 function getTabs(s) {

@@ -34,6 +34,44 @@ module.exports = function getStyles() {
     padding: 0;
   }
 
+  /* Sidebar logo header */
+  .sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--header-bg);
+    position: sticky;
+    top: 0;
+    z-index: 12;
+  }
+  .sidebar-logo-svg {
+    flex: 0 0 auto;
+    border-radius: 6px;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.04);
+  }
+  .sidebar-logo-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+    min-width: 0;
+  }
+  .sidebar-logo-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    color: var(--fg);
+  }
+  .sidebar-logo-sub {
+    font-size: 10px;
+    opacity: 0.6;
+    color: var(--fg);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   /* Tabs */
   .tabs {
     display: flex;
@@ -41,8 +79,7 @@ module.exports = function getStyles() {
     border-bottom: 1px solid var(--border);
     background: var(--bg);
     position: sticky;
-    top: 0;
-    z-index: 11;
+    top: 89px;
   }
   .tab {
     padding: 8px 14px;
