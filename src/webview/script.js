@@ -29,6 +29,22 @@ module.exports = function getScript(strings = {}) {
     toastKillFailed: strings.toastKillFailed || "Kill failed",
     toastScan: strings.toastScan || "Used / Free",
     bulkKill: strings.bulkKill || "KILL Selected",
+    actionCopy: strings.actionCopy || "Copy",
+    copied: strings.copied || "Copied",
+    copyPort: strings.copyPort || "Copy port",
+    copyPid: strings.copyPid || "Copy PID",
+    copyCommand: strings.copyCommand || "Copy command",
+    copyPath: strings.copyPath || "Copy path",
+    openInBrowser: strings.openInBrowser || "Open in browser",
+    actionOpen: strings.actionOpen || "Open",
+    detailsClose: strings.detailsClose || "Close",
+    containerImage: strings.containerImage || "Image",
+    containerState: strings.containerState || "State",
+    containerCommand: strings.containerCommand || "Command",
+    containerMounts: strings.containerMounts || "Mounts",
+    containerNetworks: strings.containerNetworks || "Networks",
+    containerEnv: strings.containerEnv || "Env (first 30)",
+    scanResult: strings.scanResult || "Used / Free",
     refresh: strings.refresh || "Refresh",
     rangeScan: strings.rangeScan || "Range Scan",
     ancestryNone: strings.ancestryNone || "—",
@@ -84,6 +100,19 @@ module.exports = function getScript(strings = {}) {
   return /*javascript*/ `
   const vscode = acquireVsCodeApi();
   const T = ${s};
+
+  // Interpolate a localised template string (i18n function values are baked
+  // into "{n}" placeholders at the host side; this helper substitutes the
+  // runtime values left-to-right). For 0-arg templates the value is already
+  // a finished string and the call is a no-op.
+  function tpl(s, ...args) {
+    if (typeof s !== "string") return String(s == null ? "" : s);
+    let i = 0;
+    return s.replace(/\{n(?:(\d+))?\}/g, (m, k) => {
+      const idx = k ? parseInt(k, 10) - 1 : i++;
+      return args[idx] != null ? String(args[idx]) : m;
+    });
+  }
 
   // ─── State ────────────────────────────────────────────────────────
   let ports = [];
@@ -218,18 +247,22 @@ module.exports = function getScript(strings = {}) {
         else showToast(msg.action + " → pid " + msg.pid + ": " + msg.error, "error");
         break;
       case "killed":
-        showToast(":" + msg.port + " " + T.toastKilled, "success");
+        showToast(tpl(T.toastKilled, msg.port), "success");
         confirmingKill = null;
-        if (typeof msg.port === "number") selected.delete(msg.port);
-        vscode.postMessage({ command: "refresh" });
+        selected.clear();
+        if (currentTab === "ports") vscode.postMessage({ command: "refresh" });
+        else if (currentTab === "processes") vscode.postMessage({ command: "refreshProcesses" });
+        else if (currentTab === "containers") vscode.postMessage({ command: "refreshContainers" });
+        else if (currentTab === "locks") vscode.postMessage({ command: "refreshLocks" });
+        render();
         break;
       case "killError":
-        showToast(T.toastKillFailed + ": " + msg.error, "error");
+        showToast(tpl(T.toastKillFailed, msg.error), "error");
         confirmingKill = null;
         render();
         break;
       case "scanResult":
-        showToast(T.toastScan.replace("{used}", msg.used).replace("{free}", msg.free), "success");
+        showToast(T.scanResult + " " + msg.used + "/" + msg.free, "success");
         break;
     }
   });
@@ -383,7 +416,8 @@ module.exports = function getScript(strings = {}) {
                   : "lock-rw-none";
     const path = l.path || "";
     const pathDisplay = path && path !== "-" ? truncate(path, 70) : "-";
-    const pidDisplay = l.pid ? '<span class="lock-pid">' + l.pid + "</span>" : "-";
+    const pidAttr = l.pid || 0;
+    const pidDisplay = l.pid ? '<button type="button" class="lock-pid-btn" onclick="showLockDetails(' + pidAttr + ', event)" title="' + escapeHtml(T.copyPid) + '">' + l.pid + "</button>" : "-";
     const fdDisplay = l.fd != null
       ? '<span class="lock-fd">fd ' + escapeHtml(String(l.fd)) + "</span>"
       : '<span class="lock-missing">-</span>';
@@ -392,7 +426,7 @@ module.exports = function getScript(strings = {}) {
       : '<span class="lock-missing">-</span>';
     const mode = l.mode || "";
     return (
-      '<tr>' +
+      '<tr data-lock-row data-pid="' + pidAttr + '" data-path="' + escapeHtmlAttr(path) + '">' +
         '<td class="lock-cell-type">' +
           '<span class="badge ' + typeClass + '">' + escapeHtml(type) + "</span>" +
           (mode ? '<span class="lock-mode">' + escapeHtml(mode) + "</span>" : "") +
@@ -406,6 +440,21 @@ module.exports = function getScript(strings = {}) {
         '<td>' + inodeDisplay + "</td>" +
       "</tr>"
     );
+  }
+
+  // Lock row click → open the owning process's details panel.
+  function showLockDetails(pid, evt) {
+    if (evt) evt.stopPropagation();
+    if (pid) openDetails(pid, "process");
+  }
+
+  // Minimal JS-string escaper for embedding into inline onclick attributes.
+  function escapeHtmlAttr(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
   }
 
   function containerAction(runtime, id, action) {
@@ -439,27 +488,27 @@ module.exports = function getScript(strings = {}) {
     ).join("");
     return '<div class="details-grid">' +
         '<div class="details-card details-section-wide">' +
-          '<div class="details-label">Image</div>' +
+          '<div class="details-label">' + escapeHtml(T.containerImage) + '</div>' +
           '<div class="details-code">' + escapeHtml(data.Config?.Image || "-") + "</div>" +
         "</div>" +
         '<div class="details-card details-section">' +
-          '<div class="details-label">State</div>' +
+          '<div class="details-label">' + escapeHtml(T.containerState) + '</div>' +
           '<div class="details-value">' + escapeHtml(data.State?.Status || "-") + "</div>" +
         "</div>" +
         '<div class="details-card details-section">' +
-          '<div class="details-label">Command</div>' +
+          '<div class="details-label">' + escapeHtml(T.containerCommand) + '</div>' +
           '<div class="details-code">' + escapeHtml(JSON.stringify(data.Config?.Cmd || [])) + "</div>" +
         "</div>" +
         '<div class="details-card details-section-wide">' +
-          '<div class="details-label">Mounts</div>' +
+          '<div class="details-label">' + escapeHtml(T.containerMounts) + '</div>' +
           '<div class="details-code">' + (mounts || "-") + "</div>" +
         "</div>" +
         '<div class="details-card details-section-wide">' +
-          '<div class="details-label">Networks</div>' +
+          '<div class="details-label">' + escapeHtml(T.containerNetworks) + '</div>' +
           '<div class="details-value">' + escapeHtml(networks || "-") + "</div>" +
         "</div>" +
         '<div class="details-card details-section-wide">' +
-          '<div class="details-label">Env (first 30)</div>' +
+          '<div class="details-label">' + escapeHtml(T.containerEnv) + '</div>' +
           '<table class="env-table"><tbody>' + env + "</tbody></table>" +
         "</div>" +
       "</div>";
@@ -488,7 +537,10 @@ module.exports = function getScript(strings = {}) {
 
   function updateAutoRefreshUi() {
     elements.autoRefreshLabel().textContent = autoRefreshEnabled ? T.autoRefreshOn : T.autoRefreshOff;
-    elements.autoRefreshToggle().classList.toggle("auto-off", !autoRefreshEnabled);
+    const toggle = elements.autoRefreshToggle();
+    toggle.classList.toggle("auto-off", !autoRefreshEnabled);
+    toggle.title = autoRefreshEnabled ? T.autoRefreshOn : T.autoRefreshOff;
+    toggle.setAttribute("aria-pressed", autoRefreshEnabled ? "true" : "false");
   }
 
   function scheduleNextRefresh(delayMs) {
@@ -584,9 +636,9 @@ module.exports = function getScript(strings = {}) {
         ? '<span title="' + withAncestry + ' port(s) with ancestry" class="stat-ancestry">🔗 ' + withAncestry + " " + T.statsAncestry + "</span>"
         : "";
       elements.stats().innerHTML =
-        '<span><span class="dot" style="background:#FF5252"></span> ' + T.statsUsed + " " + listenCount + "</span>" +
+        '<span><span class="dot" style="background:#FF5252"></span> ' + tpl(T.statsUsed, listenCount) + "</span>" +
         ancestrySpan +
-        "<span>" + T.statsTotal + " " + total + "</span>";
+        "<span>" + tpl(T.statsTotal, total) + "</span>";
     } else if (currentTab === "locks") {
       const total = locks.length;
       const byType = locks.reduce((acc, l) => {
@@ -607,14 +659,14 @@ module.exports = function getScript(strings = {}) {
       ).join("");
       elements.stats().innerHTML =
         '<span>' + T.tabLocks + "</span>" +
-        '<span>' + T.statsTotal + " " + total + "</span>" +
+        '<span>' + tpl(T.statsTotal, total) + "</span>" +
         (typeChips ? '<span class="stat-chips">' + typeChips + "</span>" : "") +
         (rwChips ? '<span class="stat-chips">' + rwChips + "</span>" : "");
     } else {
       const total = processes.length;
       elements.stats().innerHTML =
         "<span>" + T.tabProcesses + "</span>" +
-        "<span>" + T.statsTotal + " " + total + "</span>";
+        "<span>" + tpl(T.statsTotal, total) + "</span>";
     }
   }
 
@@ -643,18 +695,20 @@ module.exports = function getScript(strings = {}) {
       const isListen = p.state === "LISTEN";
       const badgeClass = isListen ? "badge-listen" : "badge-free";
       const badgeText = isListen ? T.stateListen : T.stateFree;
-      cellsByCol.port = '<td class="port-num">:' + p.port + "</td>";
+      cellsByCol.port = '<td class="port-num"><span class="port-link" onclick="openPortInBrowser(' + p.port + ', event)" title="' + escapeHtml(T.openInBrowser) + '">:' + p.port + "</span></td>";
       cellsByCol.state =
         '<td><span class="badge ' + badgeClass + '">' + badgeText + "</span></td>";
       cellsByCol.process =
         '<td class="process-name">' + escapeHtml(p.process || "-") + "</td>";
-      cellsByCol.pid = '<td class="pid">' + (p.pid || "-") + "</td>";
+      cellsByCol.pid = '<td class="pid">' +
+        (p.pid ? '<button type="button" class="pid-btn" onclick="copyPidFromRow(' + p.port + ', event)" title="' + escapeHtml(T.copyPid) + '">' + p.pid + "</button>" : "-") +
+        "</td>";
       cellsByCol.ancestry = '<td class="ancestry">' + renderAncestry(p) + "</td>";
     } else {
       const cpu = p.cpu != null ? (p.cpu.toFixed(1) + "%") : "-";
       const mem = formatMemory(p.memory);
       const portLabel = p.port
-        ? '<span class="port-num">:' + p.port + "</span>"
+        ? '<span class="port-num"><span class="port-link" onclick="openPortInBrowser(' + p.port + ', event)" title="' + escapeHtml(T.openInBrowser) + '">:' + p.port + "</span></span>"
         : "-";
       const ancestryHtml = p.ancestry
         ? '<span class="ancestry-chain" title="' + escapeHtml(p.ancestry) + '">' + escapeHtml(truncate(p.ancestry, 60)) + "</span>"
@@ -664,7 +718,9 @@ module.exports = function getScript(strings = {}) {
       // separate <th> nodes so they can be ordered independently.
       cellsByCol.process =
         '<td class="process-name">' + escapeHtml(p.name || p.process || "-") + "</td>";
-      cellsByCol.pid = '<td class="pid">' + (p.pid || "-") + "</td>";
+      cellsByCol.pid = '<td class="pid">' +
+        (p.pid ? '<button type="button" class="pid-btn" onclick="copyPidByPid(' + p.pid + ', event)" title="' + escapeHtml(T.copyPid) + '">' + p.pid + "</button>" : "-") +
+        "</td>";
       cellsByCol.port2 = '<td class="port-cell">' + portLabel + "</td>";
       cellsByCol.ancestry2 = '<td class="ancestry">' + ancestryHtml + "</td>";
       cellsByCol.cpu = '<td class="cpu">' + cpu + "</td>";
@@ -690,7 +746,7 @@ module.exports = function getScript(strings = {}) {
     const detailId = isPort ? p.pid || p.port : p.pid || port;
 
     return (
-      '<tr class="' + (isSelected ? "selected" : "") + '" onclick="rowClicked(' + detailId + ', event)">' +
+      '<tr class="' + (isSelected ? "selected" : "") + '" onclick="rowClicked(' + detailId + ', event)" oncontextmenu="showRowContextMenu(' + port + ', ' + (p.pid || "null") + ', event.clientX, event.clientY); return false;">' +
       '<td class="col-select"><input type="checkbox" ' + (isSelected ? "checked" : "") +
       ' onchange="togglePort(' + port + ')"></td>' +
       middle +
@@ -735,7 +791,7 @@ module.exports = function getScript(strings = {}) {
     });
     const btn = elements.bulkKillBtn();
     btn.style.display = activeSelected.length > 0 ? "inline-block" : "none";
-    btn.textContent = T.bulkKill + " (" + activeSelected.length + ")";
+    btn.textContent = tpl(T.bulkKill, activeSelected.length);
   }
 
   function updateSortIndicators() {
@@ -777,7 +833,7 @@ module.exports = function getScript(strings = {}) {
     if (pidBadge) {
       const showPid = kind === "process" && pid != null;
       pidBadge.style.display = showPid ? "" : "none";
-      pidBadge.textContent = showPid ? "pid " + pid : "";
+      pidBadge.textContent = showPid ? T.pidPrefix + pid : "";
     }
     elements.detailsBody().innerHTML =
       '<div class="details-loading">' + escapeHtml(T.detailsLoading) + "</div>";
@@ -969,12 +1025,21 @@ module.exports = function getScript(strings = {}) {
   function confirmKill(port, pid) { vscode.postMessage({ command: "kill", port, pid }); }
 
   function bulkKill() {
-    const targets = [...selected].filter((p) => {
-      const src = currentTab === "ports" ? ports : processes;
-      return src.find((pp) => (pp.port || pp.pid) === p);
-    });
+    const src = currentTab === "ports" ? ports : processes;
+    const targets = [...selected]
+      .map((sel) => src.find((pp) => (pp.port || pp.pid) === sel))
+      .filter(Boolean);
     if (targets.length === 0) return;
-    vscode.postMessage({ command: "bulkKill", ports: targets });
+    // On the Ports tab, selected entries are port numbers; on the Processes
+    // tab they are PIDs (since processes may not own a port). Send both arrays
+    // so the host can dispatch the right kill operation per entry.
+    const portTargets = targets
+      .filter((t) => currentTab === "ports" && t.port != null)
+      .map((t) => t.port);
+    const pidTargets = targets
+      .filter((t) => currentTab !== "ports" && t.pid != null)
+      .map((t) => t.pid);
+    vscode.postMessage({ command: "bulkKill", ports: portTargets, pids: pidTargets });
     selected.clear();
   }
 
@@ -1032,6 +1097,132 @@ module.exports = function getScript(strings = {}) {
     el.textContent = msg;
     container.appendChild(el);
     setTimeout(() => el.remove(), 3000);
+  }
+
+  function copyText(text) {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(
+          () => showToast(T.copied + ": " + text, "success"),
+          () => fallbackCopy(text),
+        );
+      } else {
+        fallbackCopy(text);
+      }
+    } catch {
+      fallbackCopy(text);
+    }
+  }
+
+  function fallbackCopy(text) {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+      showToast(T.copied + ": " + text, "success");
+    } catch (e) {
+      showToast("Copy failed: " + e.message, "error");
+    }
+  }
+
+  function copyPidFromElement(evt, pid) {
+    if (!pid) return;
+    evt.stopPropagation();
+    copyText(String(pid));
+  }
+
+  function openPortInBrowser(port) {
+    if (!port) return;
+    vscode.postMessage({ command: "openExternal", uri: "http://localhost:" + port });
+  }
+
+  // ─── Context menu (right-click on a row) ─────────────────────────
+  // The webview has no native right-click menu, so we build a minimal one.
+  // Each action posts a message to the host or performs a webview-side action.
+  let contextMenuEl = null;
+  function showContextMenu(x, y, items) {
+    hideContextMenu();
+    const menu = document.createElement("div");
+    menu.className = "ctx-menu";
+    menu.setAttribute("role", "menu");
+    items.forEach((it) => {
+      if (it.separator) {
+        const sep = document.createElement("div");
+        sep.className = "ctx-sep";
+        menu.appendChild(sep);
+        return;
+      }
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "ctx-item";
+      btn.textContent = it.label;
+      btn.setAttribute("role", "menuitem");
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        hideContextMenu();
+        try { it.action(); } catch (err) { showToast("Action failed: " + err.message, "error"); }
+      });
+      menu.appendChild(btn);
+    });
+    document.body.appendChild(menu);
+    // Clamp to viewport
+    const rect = menu.getBoundingClientRect();
+    const maxX = window.innerWidth - rect.width - 4;
+    const maxY = window.innerHeight - rect.height - 4;
+    menu.style.left = Math.min(x, maxX) + "px";
+    menu.style.top = Math.min(y, maxY) + "px";
+    contextMenuEl = menu;
+  }
+
+  function hideContextMenu() {
+    if (contextMenuEl && contextMenuEl.parentNode) contextMenuEl.remove();
+    contextMenuEl = null;
+  }
+
+  document.addEventListener("click", hideContextMenu);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideContextMenu(); });
+
+  // Build the per-row context menu for the Ports/Processes tabs.
+  function showRowContextMenu(port, pid, x, y) {
+    const items = [];
+    if (pid) {
+      items.push({ label: T.copyPid + " (" + pid + ")", action: () => copyText(String(pid)) });
+    }
+    if (port) {
+      items.push({ label: T.copyPort + " (:" + port + ")", action: () => copyText(String(port)) });
+      items.push({ label: T.openInBrowser + " (:" + port + ")", action: () => openPortInBrowser(port) });
+    }
+    if (items.length === 0) return;
+    showContextMenu(x, y, items);
+  }
+
+  function showLockContextMenu(pid, path, x, y) {
+    const items = [];
+    if (pid) items.push({ label: T.copyPid + " (" + pid + ")", action: () => copyText(String(pid)) });
+    if (path) items.push({ label: T.copyPath, action: () => copyText(path) });
+    if (pid) {
+      items.push({ separator: true });
+      items.push({
+        label: "Show details",
+        action: () => { openDetails(pid, "process"); },
+      });
+    }
+    if (items.length === 0) return;
+    showContextMenu(x, y, items);
+  }
+
+  // Convenience wrapper used by inline onclick on PID buttons in the
+  // Processes tab (where pid is known directly).
+  function copyPidFromElementByPort(port, evt) {
+    evt.stopPropagation();
+    const src = currentTab === "ports" ? ports : processes;
+    const found = src.find((p) => p.port === port);
+    if (found && found.pid) copyText(String(found.pid));
   }
 
   // ─── Column reorder + resize ────────────────────────────────────
@@ -1184,8 +1375,38 @@ module.exports = function getScript(strings = {}) {
   window.closeLangMenu = closeLangMenu;
   window.containerAction = containerAction;
   window.processAction = processAction;
+  window.openPortInBrowser = openPortInBrowser;
+  window.copyPidFromRow = copyPidFromElementByPort;
+  window.copyPidByPid = copyPidFromElement;
+  window.showRowContextMenu = showRowContextMenu;
+  window.showLockContextMenu = showLockContextMenu;
+  window.showLockDetails = showLockDetails;
 
   initColumnInteractions();
+
+  // Lock row event delegation: context menu and PID click.
+  // The rows use data-* attributes (not inline onclick) so paths containing
+  // quotes / backslashes don't break the HTML or the surrounding template
+  // literal that wraps the entire script.
+  const locksTbody = document.getElementById("locksTbody");
+  if (locksTbody) {
+    locksTbody.addEventListener("contextmenu", (e) => {
+      const tr = e.target.closest("tr[data-lock-row]");
+      if (!tr) return;
+      e.preventDefault();
+      const pid = parseInt(tr.dataset.pid, 10) || 0;
+      const path = tr.dataset.path || "";
+      showLockContextMenu(pid, path, e.clientX, e.clientY);
+    });
+    locksTbody.addEventListener("click", (e) => {
+      const btn = e.target.closest(".lock-pid-btn");
+      if (!btn) return;
+      const tr = btn.closest("tr[data-lock-row]");
+      if (!tr) return;
+      const pid = parseInt(tr.dataset.pid, 10) || 0;
+      if (pid) openDetails(pid, "process");
+    });
+  }
 
   // Wire the close button with addEventListener so it doesn't depend on
   // inline onclick resolving through window globals (some webview contexts

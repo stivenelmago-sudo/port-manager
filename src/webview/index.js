@@ -265,7 +265,7 @@ function getDetailsPanel(s) {
       <span class="details-title" id="detailsTitle">${escape(s.detailsTitle)}</span>
       <span class="details-title-pid" id="detailsPidBadge" style="display:none"></span>
     </span>
-    <button class="details-close" id="detailsCloseBtn" type="button" aria-label="Close">×</button>
+    <button class="details-close" id="detailsCloseBtn" type="button" aria-label="${escape(s.detailsClose)}">×</button>
   </div>
   <div class="details-body" id="detailsBody">
     <div class="details-empty">${escape(s.detailsNoData)}</div>

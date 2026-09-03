@@ -68,6 +68,9 @@ async function handleMessage(msg, webview, witrAvailability) {
     case COMMAND.SET_LANGUAGE:
       handleSetLanguage(msg.lang);
       break;
+    case COMMAND.OPEN_EXTERNAL:
+      handleOpenExternal(msg.uri);
+      break;
   }
 }
 
@@ -293,25 +296,52 @@ async function handleKill(msg, webview) {
 }
 
 async function handleBulkKill(msg, webview) {
-  const ports = getListeningPorts();
   let killed = 0;
   let escalated = 0;
-  for (const targetPort of msg.ports) {
-    const found = ports.find((p) => p.port === targetPort);
-    if (found) {
+  const errors = [];
+
+  // 1) Port-targeted kills: resolve each port to its owning PID via the
+  //    current snapshot of listening ports. Skip ports that no longer have
+  //    an owner (process exited, port re-used, etc.).
+  if (Array.isArray(msg.ports) && msg.ports.length > 0) {
+    const livePorts = getListeningPorts();
+    for (const targetPort of msg.ports) {
+      const found = livePorts.find((p) => p.port === targetPort);
+      if (!found || !found.pid) continue;
       try {
         const result = await killGraceful(found.pid);
         killed++;
-        if (result.escalated) escalated++;
-      } catch {
-        // continue
+        if (result && result.escalated) escalated++;
+      } catch (e) {
+        errors.push(`:${targetPort} — ${e.message}`);
       }
     }
   }
+
+  // 2) PID-targeted kills (Processes tab). Useful for processes we cannot
+  //    resolve through the listening-ports view (e.g. background daemons).
+  if (Array.isArray(msg.pids) && msg.pids.length > 0) {
+    for (const targetPid of msg.pids) {
+      try {
+        const result = await killGraceful(targetPid);
+        killed++;
+        if (result && result.escalated) escalated++;
+      } catch (e) {
+        errors.push(`pid ${targetPid} — ${e.message}`);
+      }
+    }
+  }
+
   webview.postMessage({
     type: MESSAGE_TYPE.KILLED,
     port: i18n.tr("webview.bulkKilledLabel", killed) + (escalated ? ` (${escalated} escalated)` : ""),
   });
+  if (errors.length > 0) {
+    webview.postMessage({
+      type: MESSAGE_TYPE.KILL_ERROR,
+      error: errors.join("; "),
+    });
+  }
 }
 
 function handleScan(msg, _webview) {
@@ -339,6 +369,14 @@ async function handleSetLanguage(lang) {
   }
   i18n.setLanguage(lang);
   await vscode.commands.executeCommand("workbench.action.reloadWindow");
+}
+
+function handleOpenExternal(uri) {
+  // Sanitize: only allow http(s) URLs to prevent misuse as a generic opener.
+  if (typeof uri !== "string") return;
+  const trimmed = uri.trim();
+  if (!/^https?:\/\//i.test(trimmed)) return;
+  vscode.env.openExternal(vscode.Uri.parse(trimmed));
 }
 
 module.exports = { createWebviewProvider };

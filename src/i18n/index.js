@@ -93,7 +93,15 @@ function getWebviewStrings() {
             MESSAGES[DEFAULT_LANG].webview;
   const out = { _lang: currentLang };
   for (const k of Object.keys(w)) {
-    out[k] = typeof w[k] === "function" ? null : w[k];
+    const v = w[k];
+    if (typeof v === "function") {
+      // Webview strings are shipped via JSON.stringify (functions don't survive
+      // the trip), so we bake any callable to a plain string with {n} place-
+      // holders. Callers in script.js do T.bulkKill(n).replace("{n}", n).
+      out[k] = bakeTemplate(v);
+    } else {
+      out[k] = v;
+    }
   }
   out._supported = SUPPORTED.map(code => ({
     code,
@@ -107,6 +115,29 @@ function getWebviewStrings() {
     }[code],
   }));
   return out;
+}
+
+/**
+ * Convert a function-valued i18n entry to a string template using {n}, {n2}…
+ * placeholders. Each {n} marker is replaced left-to-right with the next
+ * argument's stringified value at the call site.
+ *
+ * Examples:
+ *   (n) => `KILL Selected (${n})`   →  "KILL Selected ({n})"
+ *   () => `Hello`                   →  "Hello"
+ */
+function bakeTemplate(fn) {
+  // We probe with a generous number of sentinels ({n}, {n2}, {n3}, {n4}) and
+  // strip out any that didn't make it into the rendered string. The webview's
+  // tpl() helper substitutes {n} / {n2} / etc. left-to-right, so we want each
+  // slot to appear exactly once in the baked template.
+  const sentinels = ["{n}", "{n2}", "{n3}", "{n4}"];
+  const baked = fn(...sentinels);
+  // Drop sentinels that the template didn't actually use (e.g. functions with
+  // default args or rest params where fn.length === 0). Detect by checking
+  // presence in the baked string; the webview's tpl() replaces them
+  // left-to-right, so unused sentinels are simply ignored.
+  return baked;
 }
 
 module.exports = {

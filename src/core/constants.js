@@ -36,6 +36,7 @@ module.exports = {
     BULK_KILL: "bulkKill",
     SCAN: "scan",
     SET_LANGUAGE: "setLanguage",
+    OPEN_EXTERNAL: "openExternal",
     REFRESH_PROCESSES: "refreshProcesses",
     REFRESH_CONTAINERS: "refreshContainers",
     REFRESH_LOCKS: "refreshLocks",

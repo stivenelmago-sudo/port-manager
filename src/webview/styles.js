@@ -767,6 +767,74 @@ module.exports = function getStyles() {
     cursor: pointer;
   }
 
+  /* Clickable PID / port buttons */
+  .pid-btn {
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 11px;
+    padding: 2px 6px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--fg);
+    cursor: pointer;
+    transition: border-color 100ms, color 100ms;
+  }
+  .pid-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .pid-btn:focus-visible {
+    outline: 1px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  /* Clickable port number (Open in browser) */
+  .port-link {
+    cursor: pointer;
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px dotted transparent;
+    transition: border-color 100ms;
+  }
+  .port-link:hover { border-bottom-color: var(--accent); }
+
+  /* Custom right-click context menu */
+  .ctx-menu {
+    position: fixed;
+    z-index: 100;
+    min-width: 180px;
+    background: var(--vscode-editorWidget-background, var(--header-bg));
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    padding: 4px;
+    animation: ctxMenuFade 120ms ease-out;
+  }
+  @keyframes ctxMenuFade {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .ctx-item {
+    display: block;
+    width: 100%;
+    padding: 6px 10px;
+    background: transparent;
+    border: none;
+    color: var(--fg);
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 80ms;
+  }
+  .ctx-item:hover { background: var(--hover); }
+  .ctx-item:focus-visible { outline: 1px solid var(--accent); outline-offset: -1px; }
+  .ctx-sep {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 6px;
+  }
+
   /* Locks panel — refined row layout */
   #locksTable {
     width: 100%;
@@ -879,6 +947,18 @@ module.exports = function getStyles() {
     cursor: pointer;
   }
   .lock-pid:hover { border-color: var(--accent); color: var(--accent); }
+  .lock-pid-btn {
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 11px;
+    padding: 2px 6px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--fg);
+    cursor: pointer;
+    transition: border-color 100ms, color 100ms;
+  }
+  .lock-pid-btn:hover { border-color: var(--accent); color: var(--accent); }
   .lock-fd {
     font-family: var(--vscode-editor-font-family, monospace);
     font-size: 10px;
