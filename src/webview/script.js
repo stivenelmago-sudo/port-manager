@@ -462,7 +462,16 @@ module.exports = function getScript(strings = {}) {
   }
 
   function renderContainerDetails(runtime, id, data, error) {
-    openDetails(id, "container");
+    // Open the panel only on a fresh click (detailsPid null) or for the same
+    // container the user is already viewing. Stale responses for containers
+    // the user dismissed (close button) or replaced (clicked another row that
+    // already won the race) must not resurrect the panel — that produces an
+    // "image keeps changing, can't close" loop.
+    if (detailsPid == null) {
+      openDetails(id, "container");
+    } else if (detailsPid !== id) {
+      return;
+    }
     detailsRuntime = runtime;
     if (error || !data) {
       if (detailsLastData) return;

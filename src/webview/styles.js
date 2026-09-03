@@ -565,10 +565,10 @@ module.exports = function getStyles() {
     align-items: center;
     gap: 5px;
     font-size: 10px;
-    text-transform: uppercase;
     letter-spacing: 0.6px;
     opacity: 0.55;
     font-weight: 700;
+    text-transform: capitalize;
   }
   .details-label::before {
     content: "";
