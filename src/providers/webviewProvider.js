@@ -421,7 +421,7 @@ async function persistMcpSettings(patch) {
     autoConfig.syncMcpConfig({
       enabled: patch.enabled !== undefined ? !!patch.enabled : readMcpSettings().enabled,
       disabledTools: patch.disabledTools !== undefined ? patch.disabledTools : readMcpSettings().disabledTools,
-      version: require("../package.json").version,
+      version: require("../../package.json").version,
     });
   } catch (e) {
     console.warn(`[portpilot] syncMcpConfig failed: ${e.message}`);
@@ -437,7 +437,7 @@ function sendMcpState(webview) {
     tools: MCP_TOOLS,
     autoconfig: vscode.workspace.getConfiguration("portManager.mcp").get("autoconfig", true) !== false,
     configPath: autoConfig.mcpConfigPath(),
-    version: require("../package.json").version,
+    version: require("../../package.json").version,
   });
 }
 
