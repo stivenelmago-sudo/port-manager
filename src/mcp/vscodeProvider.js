@@ -87,14 +87,21 @@ function register(context) {
   }
 
   // 2. On-disk auto-config (one-shot per session, non-blocking).
+  //    Detects the active editor (VS Code, Cursor, Antigravity, ...) via
+  //    vscode.env.appName and writes to the matching client config dirs in
+  //    addition to the always-target Anthropic + Kilo configs.
   try {
     const workspaceDir = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0]
       ? vscode.workspace.workspaceFolders[0].uri.fsPath
       : undefined;
+    const appName = (vscode.env && typeof vscode.env.appName === "string") ? vscode.env.appName : "";
+    const detected = autoConfig.detectClients({ appName });
     autoConfig.autoConfigure({
       mcpEntry,
       workspaceDir,
       allowWorkspaceWrite: true,
+      appName,
+      clients: detected,
       verbose: false,
     });
   } catch (e) {

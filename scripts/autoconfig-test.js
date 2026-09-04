@@ -99,25 +99,26 @@ function main() {
   console.log("\n5. ensureWitrBinary (no network):");
   // (deferred until the per-platform block finishes so we can keep going)
 
-  // 6. Per-platform candidate paths
+  // 6. Per-platform candidate paths (with explicit all-clients filter)
   console.log("\n6. per-platform candidate paths:");
   const pHome = makeTempHome();
   process.env.HOME = pHome;
   process.env.APPDATA = pHome;
+  const allClients = new Set(["vscode", "copilot", "cursor", "antigravity", "kilo", "claude-code", "claude-desktop"]);
   try {
-    const linuxFiles = autoConfig.candidateFiles(undefined, "linux");
+    const linuxFiles = autoConfig.candidateFilesForClients(undefined, "linux", allClients, { home: pHome });
     check("linux includes ~/.config/Code/User/mcp.json", linuxFiles.includes(path.join(pHome, ".config", "Code", "User", "mcp.json")));
     check("linux includes Insiders", linuxFiles.includes(path.join(pHome, ".config", "Code - Insiders", "User", "mcp.json")));
     check("linux includes ~/.config/Claude/...", linuxFiles.some((f) => f.endsWith(path.join(".config", "Claude", "claude_desktop_config.json"))));
     check("linux does NOT include ~/Library/...", !linuxFiles.some((f) => f.includes("Library")));
 
-    const macFiles = autoConfig.candidateFiles(undefined, "darwin");
+    const macFiles = autoConfig.candidateFilesForClients(undefined, "darwin", allClients, { home: pHome });
     check("mac includes ~/Library/.../Code/User/mcp.json", macFiles.includes(path.join(pHome, "Library", "Application Support", "Code", "User", "mcp.json")));
     check("mac includes Code - Insiders", macFiles.includes(path.join(pHome, "Library", "Application Support", "Code - Insiders", "User", "mcp.json")));
     check("mac includes Claude Desktop app-support", macFiles.includes(path.join(pHome, "Library", "Application Support", "Claude", "claude_desktop_config.json")));
     check("mac does NOT include ~/.config/Code/...", !macFiles.includes(path.join(pHome, ".config", "Code", "User", "mcp.json")));
 
-    const winFiles = autoConfig.candidateFiles(undefined, "win32");
+    const winFiles = autoConfig.candidateFilesForClients(undefined, "win32", allClients, { home: pHome, appData: pHome });
     check("win32 includes %APPDATA%\\Code\\User\\mcp.json", winFiles.includes(path.join(pHome, "Code", "User", "mcp.json")));
     check("win32 includes Code - Insiders", winFiles.includes(path.join(pHome, "Code - Insiders", "User", "mcp.json")));
     check("win32 includes %APPDATA%\\Claude\\claude_desktop_config.json", winFiles.includes(path.join(pHome, "Claude", "claude_desktop_config.json")));
@@ -152,8 +153,8 @@ function main() {
     fs.rmSync(home2, { recursive: true, force: true });
   }
 
-  // 8. autoConfigure with explicit Windows platform
-  console.log("\n8. autoConfigure on win32 (mocked platform):");
+  // 8. autoConfigure with explicit Windows platform + all clients
+  console.log("\n8. autoConfigure on win32 (mocked platform, all clients):");
   const home3 = makeTempHome();
   process.env.HOME = home3;
   process.env.APPDATA = home3;
@@ -162,19 +163,24 @@ function main() {
       mcpEntry: path.join(ROOT, "mcp-server", "index.js"),
       workspaceDir: undefined,
       platform: "win32",
+      clients: allClients,
+      home: home3,
+      appData: home3,
     });
     check("wrote win32 VS Code user mcp.json", fs.existsSync(path.join(home3, "Code", "User", "mcp.json")));
     check("wrote win32 Claude Desktop config", fs.existsSync(path.join(home3, "Claude", "claude_desktop_config.json")));
     const winCfg = JSON.parse(fs.readFileSync(path.join(home3, "Code", "User", "mcp.json"), "utf8"));
     check("win32 entry uses forward-slash-free absolute path", winCfg.mcpServers.portpilot.args[0].includes("mcp-server"));
+    check("win32 wrote Cursor config", fs.existsSync(path.join(home3, "Cursor", "User", "mcp.json")));
+    check("win32 wrote Antigravity config", fs.existsSync(path.join(home3, "Antigravity", "mcp.json")));
   } finally {
     process.env.HOME = origHome;
     process.env.APPDATA = origAppData;
     fs.rmSync(home3, { recursive: true, force: true });
   }
 
-  // 9. autoConfigure on darwin (mocked)
-  console.log("\n9. autoConfigure on darwin (mocked platform):");
+  // 9. autoConfigure on darwin (mocked, all clients)
+  console.log("\n9. autoConfigure on darwin (mocked platform, all clients):");
   const home4 = makeTempHome();
   process.env.HOME = home4;
   process.env.APPDATA = home4;
@@ -183,23 +189,128 @@ function main() {
       mcpEntry: path.join(ROOT, "mcp-server", "index.js"),
       workspaceDir: undefined,
       platform: "darwin",
+      clients: allClients,
+      home: home4,
+      appData: home4,
     });
     check("wrote darwin VS Code user mcp.json", fs.existsSync(path.join(home4, "Library", "Application Support", "Code", "User", "mcp.json")));
     check("wrote darwin Claude Desktop app-support", fs.existsSync(path.join(home4, "Library", "Application Support", "Claude", "claude_desktop_config.json")));
+    check("wrote darwin Cursor User mcp.json", fs.existsSync(path.join(home4, "Library", "Application Support", "Cursor", "User", "mcp.json")));
+    check("wrote darwin Antigravity config", fs.existsSync(path.join(home4, "Library", "Application Support", "Antigravity", "mcp.json")));
   } finally {
     process.env.HOME = origHome;
     process.env.APPDATA = origAppData;
     fs.rmSync(home4, { recursive: true, force: true });
   }
 
-  // 10. WITR downloader — pick the right target per platform
-  console.log("\n10. downloadWitr.TARGETS per platform:");
+  // 10. detectClients via appName
+  console.log("\n10. detectClients(appName):");
+  const emptyHome = makeTempHome();
+  try {
+    const r1 = autoConfig.detectClients({ home: emptyHome, appData: emptyHome, appName: "Visual Studio Code" });
+    check("vscode detected from appName 'Visual Studio Code'", r1.has("vscode"));
+    check("copilot also tagged when vscode present", r1.has("copilot"));
+    const r2 = autoConfig.detectClients({ home: emptyHome, appData: emptyHome, appName: "Cursor" });
+    check("cursor detected from appName 'Cursor'", r2.has("cursor"));
+    const r3 = autoConfig.detectClients({ home: emptyHome, appData: emptyHome, appName: "Antigravity" });
+    check("antigravity detected from appName 'Antigravity'", r3.has("antigravity"));
+    const r4 = autoConfig.detectClients({ home: emptyHome, appData: emptyHome, appName: "UnknownApp" });
+    check("unknown app name still includes defaults (claude-code, claude-desktop, kilo)", r4.has("claude-code") && r4.has("kilo") && r4.has("claude-desktop"));
+  } finally {
+    fs.rmSync(emptyHome, { recursive: true, force: true });
+  }
+
+  // 11. detectClients via filesystem markers
+  console.log("\n11. detectClients(filesystem):");
+  const markerHome = makeTempHome();
+  try {
+    process.env.HOME = markerHome;
+    process.env.APPDATA = markerHome;
+    fs.mkdirSync(path.join(markerHome, ".cursor"), { recursive: true });
+    const r1 = autoConfig.detectClients({ home: markerHome, appData: markerHome, appName: "UnknownEditor" });
+    check("~/.cursor presence triggers cursor detection", r1.has("cursor"));
+    fs.mkdirSync(path.join(markerHome, ".antigravity"), { recursive: true });
+    const r2 = autoConfig.detectClients({ home: markerHome, appData: markerHome, appName: "UnknownEditor" });
+    check("~/.antigravity presence triggers antigravity detection", r2.has("antigravity"));
+    fs.mkdirSync(path.join(markerHome, ".config", "Code"), { recursive: true });
+    const r3 = autoConfig.detectClients({ home: markerHome, appData: markerHome, appName: "UnknownEditor" });
+    check("~/.config/Code presence triggers vscode detection", r3.has("vscode") && r3.has("copilot"));
+  } finally {
+    process.env.HOME = origHome;
+    process.env.APPDATA = origAppData;
+    fs.rmSync(markerHome, { recursive: true, force: true });
+  }
+
+  // 12. per-client file paths on each platform
+  console.log("\n12. candidateFilesForClients per client:");
+  {
+    const home = makeTempHome();
+    const linuxFiles = autoConfig.candidateFilesForClients(undefined, "linux", new Set(["vscode", "copilot", "cursor", "antigravity", "kilo", "claude-code", "claude-desktop"]), { home });
+    const macFiles = autoConfig.candidateFilesForClients(undefined, "darwin", new Set(["vscode", "copilot", "cursor", "antigravity", "kilo", "claude-code", "claude-desktop"]), { home });
+    const winFiles = autoConfig.candidateFilesForClients(undefined, "win32", new Set(["vscode", "copilot", "cursor", "antigravity", "kilo", "claude-code", "claude-desktop"]), { home, appData: home });
+
+    check("linux: VS Code user mcp.json", linuxFiles.includes(path.join(home, ".config", "Code", "User", "mcp.json")));
+    check("linux: Cursor user mcp.json", linuxFiles.includes(path.join(home, ".config", "Cursor", "User", "mcp.json")));
+    check("linux: Cursor legacy ~/.cursor/mcp.json", linuxFiles.includes(path.join(home, ".cursor", "mcp.json")));
+    check("linux: Antigravity config", linuxFiles.includes(path.join(home, ".config", "antigravity", "mcp.json")));
+
+    check("mac: Cursor User mcp.json", macFiles.includes(path.join(home, "Library", "Application Support", "Cursor", "User", "mcp.json")));
+    check("mac: Antigravity in Application Support", macFiles.includes(path.join(home, "Library", "Application Support", "Antigravity", "mcp.json")));
+
+    check("win: Cursor mcp.json under %APPDATA%", winFiles.includes(path.join(home, "Cursor", "User", "mcp.json")));
+    check("win: Antigravity mcp.json under %APPDATA%", winFiles.includes(path.join(home, "Antigravity", "mcp.json")));
+
+    // Filtering: only Cursor installed
+    const onlyCursor = autoConfig.candidateFilesForClients(undefined, "linux", new Set(["cursor"]), { home });
+    check("only-cursor filter excludes vscode paths", !onlyCursor.some((f) => f.includes("Code/User")));
+    check("only-cursor filter includes cursor path", onlyCursor.includes(path.join(home, ".config", "Cursor", "User", "mcp.json")));
+    check("only-cursor filter excludes kilo (not selected)", !onlyCursor.includes(path.join(home, ".kilo", "mcp.json")));
+
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+
+  // 13. autoConfigure writes to a Cursor-only set
+  console.log("\n13. autoConfigure with cursor-only clients filter:");
+  {
+    const home = makeTempHome();
+    process.env.HOME = home;
+    process.env.APPDATA = home;
+    try {
+      autoConfig.autoConfigure({
+        mcpEntry: path.join(ROOT, "mcp-server", "index.js"),
+        platform: "linux",
+        workspaceDir: undefined,
+        clients: new Set(["cursor", "kilo"]), // explicitly limit
+        home,
+        appData: home,
+      });
+      check("wrote Cursor user config", fs.existsSync(path.join(home, ".config", "Cursor", "User", "mcp.json")));
+      check("wrote Kilo config", fs.existsSync(path.join(home, ".config", "kilo", "mcp.json")));
+      check("did NOT write Antigravity (not in filter)", !fs.existsSync(path.join(home, ".config", "antigravity", "mcp.json")));
+      // Idempotent — second call must report already
+      const r2 = autoConfig.autoConfigure({
+        mcpEntry: path.join(ROOT, "mcp-server", "index.js"),
+        platform: "linux",
+        clients: new Set(["cursor", "kilo"]),
+        home,
+        appData: home,
+      });
+      check("second run is fully idempotent", r2.every((r) => r.status === "already"));
+    } finally {
+      process.env.HOME = origHome;
+      process.env.APPDATA = origAppData;
+      fs.rmSync(home, { recursive: true, force: true });
+    }
+  }
+
+  // 14. WITR downloader — pick the right target per platform
+  console.log("\n14. downloadWitr.TARGETS per platform:");
   const { TARGETS } = require(path.join(ROOT, "src/mcp/downloadWitr"));
   check("linux+x64 -> witr-linux-amd64", TARGETS["linux:x64"] === undefined && TARGETS["linux:amd64"] === "witr-linux-amd64");
   check("darwin+arm64 -> witr-darwin-arm64", TARGETS["darwin:arm64"] === "witr-darwin-arm64");
   check("win32+amd64 is a zip descriptor", typeof TARGETS["win32:amd64"] === "object" && TARGETS["win32:amd64"].file === "witr-windows-amd64.zip");
 
-  // 11. Zip extraction (Windows path) — the downloader uses `tar -xf` on
+  // 15. Zip extraction (Windows path) — the downloader uses `tar -xf` on
   //     Windows because tar ships with Win10 1803+ and supports zip, and
   //     falls back to PowerShell's Expand-Archive if tar fails. This test
   //     runs only on hosts where the system tar advertises zip support

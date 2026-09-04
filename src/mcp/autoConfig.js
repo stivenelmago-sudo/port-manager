@@ -2,10 +2,15 @@
  * PortPilot - MCP Auto-Configuration
  *
  * Shared logic used by both the VS Code extension activation path and the
- * `npm` postinstall script. Registers the PortPilot MCP server in well-known
- * client config files (Kilo, Claude Code, Claude Desktop, VS Code workspace
- * mcp.json) and ensures the WITR ancestry binary is present for the current
- * host.
+ * `npm` postinstall script. Detects which AI clients are present on the
+ * host (VS Code / GitHub Copilot, Cursor, Antigravity, Kilo, Claude Code,
+ * Claude Desktop) and writes a portpilot MCP entry into each of their
+ * config files. Also ensures the WITR ancestry binary is present for the
+ * current host.
+ *
+ * Detection sources:
+ *   - vscode.env.appName when run inside an editor (tells us the active host)
+ *   - filesystem markers (~/.cursor, ~/.antigravity, ~/.gemini, ...)
  *
  * Design goals:
  *   - Idempotent: never overwrite an existing portpilot entry.
@@ -100,59 +105,12 @@ function registerInConfigFile(file, entry, opts = {}) {
 // Config locations
 // ---------------------------------------------------------------------------
 
-function candidateFiles(workspaceDir, platformOverride) {
-  const home = os.homedir();
-  const files = [];
+function candidateFiles(workspaceDir, platformOverride, appNameOverride) {
   const platform = platformOverride || process.platform;
-  const appData = process.env.APPDATA;
+  if (!isSupportedPlatform(platform)) return [];
 
-  // iOS / other unsupported hosts get nothing — there are no well-known
-  // config locations on those platforms, and the MCP entry would point at
-  // paths the user doesn't have.
-  if (!isSupportedPlatform(platform)) {
-    return files;
-  }
-
-  // VS Code workspace mcp.json (per-project)
-  if (workspaceDir) {
-    files.push(path.join(workspaceDir, ".vscode", "mcp.json"));
-  }
-
-  // VS Code user mcp.json (Stable + Insiders)
-  if (platform === "win32") {
-    if (appData) {
-      files.push(path.join(appData, "Code", "User", "mcp.json"));
-      files.push(path.join(appData, "Code - Insiders", "User", "mcp.json"));
-    }
-  } else if (platform === "darwin") {
-    files.push(path.join(home, "Library", "Application Support", "Code", "User", "mcp.json"));
-    files.push(path.join(home, "Library", "Application Support", "Code - Insiders", "User", "mcp.json"));
-  } else if (platform === "linux" || platform === "freebsd") {
-    files.push(path.join(home, ".config", "Code", "User", "mcp.json"));
-    files.push(path.join(home, ".config", "Code - Insiders", "User", "mcp.json"));
-  }
-
-  // Kilo
-  if (platform === "win32") {
-    if (appData) files.push(path.join(appData, "Kilo", "mcp.json"));
-  } else {
-    files.push(path.join(home, ".config", "kilo", "mcp.json"));
-    files.push(path.join(home, ".kilo", "mcp.json"));
-  }
-
-  // Claude Code (user-level, cross-platform JSON file)
-  files.push(path.join(home, ".claude.json"));
-
-  // Claude Desktop
-  if (platform === "darwin") {
-    files.push(path.join(home, "Library", "Application Support", "Claude", "claude_desktop_config.json"));
-  } else if (platform === "win32") {
-    if (appData) files.push(path.join(appData, "Claude", "claude_desktop_config.json"));
-  } else {
-    files.push(path.join(home, ".config", "Claude", "claude_desktop_config.json"));
-  }
-
-  return files;
+  const clients = detectClients({ appName: appNameOverride });
+  return candidateFilesForClients(workspaceDir, platform, clients);
 }
 
 /**
@@ -166,6 +124,162 @@ function candidateFiles(workspaceDir, platformOverride) {
 function isSupportedPlatform(override) {
   const p = override || process.platform;
   return p === "linux" || p === "darwin" || p === "win32" || p === "freebsd";
+}
+
+// ---------------------------------------------------------------------------
+// Client detection
+// ---------------------------------------------------------------------------
+
+/**
+ * Detect which AI clients are installed on this host so we only touch the
+ * config files that exist for real users. Detection combines:
+ *   1. The supplied `appName` (typically `vscode.env.appName`) which tells
+ *      us the active editor host.
+ *   2. Filesystem markers in the user's home directory.
+ *   3. `~/.config`-style config dirs (XDG-friendly).
+ *
+ * Recognised clients:
+ *   - vscode    : VS Code stable / Insiders + GitHub Copilot Chat (same engine)
+ *   - cursor    : Cursor editor
+ *   - antigravity: Google Antigravity (current known config paths)
+ *   - kilo      : Kilo CLI / editor
+ *   - claude-code, claude-desktop: Anthropic clients
+ *
+ * Returns a Set of client ids; callers can override or extend.
+ *
+ * @param {Object} [opts]
+ * @param {string} [opts.appName]  editor application name (e.g. "Visual Studio Code", "Cursor", "Antigravity")
+ * @param {string} [opts.home]     override $HOME (testing)
+ * @param {string} [opts.appData]  override %APPDATA% (testing)
+ * @param {boolean} [opts.includeDefaults]  also return clients that we always target (vscode, kilo, claude-code, claude-desktop)
+ */
+function detectClients(opts = {}) {
+  const home = opts.home || os.homedir();
+  const appData = opts.appData || process.env.APPDATA;
+  const appName = (opts.appName || "").toLowerCase();
+  const platform = process.platform;
+  const found = new Set();
+
+  // Always target the cross-platform Anthropic + Kilo configs — these are
+  // small JSON files that don't clash with anything else. Users without
+  // those clients just end up with an empty ~/.claude.json which is fine.
+  if (opts.includeDefaults !== false) {
+    found.add("claude-code");
+    found.add("claude-desktop");
+    found.add("kilo");
+  }
+
+  // 1. Active host via appName (works inside any Code-compatible editor)
+  if (appName.includes("antigravity")) found.add("antigravity");
+  if (appName.includes("cursor")) found.add("cursor");
+  if (appName.includes("vs code") || appName.includes("visual studio code") || appName.includes("code - insiders")) {
+    found.add("vscode");
+  }
+  // GitHub Copilot Chat runs inside VS Code and reads the same MCP config.
+  // Whenever the VS Code engine is active we also tag "copilot" so callers
+  // can choose to log / write a more specific entry — currently the entries
+  // are identical, so the Set just records the detection.
+  if (found.has("vscode")) found.add("copilot");
+
+  // 2. Filesystem markers (works without an active editor — e.g. from npm postinstall)
+  const has = (p) => { try { return fs.existsSync(p); } catch { return false; } };
+  if (platform === "darwin") {
+    if (has(path.join(home, "Library", "Application Support", "Cursor")) ||
+        has(path.join(home, ".cursor"))) found.add("cursor");
+    if (has(path.join(home, "Library", "Application Support", "antigravity")) ||
+        has(path.join(home, ".antigravity")) ||
+        has(path.join(home, "Library", "Application Support", "Google", "Antigravity"))) found.add("antigravity");
+  } else if (platform === "win32") {
+    if (appData && has(path.join(appData, "Cursor"))) found.add("cursor");
+    if (appData && has(path.join(appData, "Antigravity"))) found.add("antigravity");
+  } else {
+    if (has(path.join(home, ".config", "Cursor")) || has(path.join(home, ".cursor"))) found.add("cursor");
+    if (has(path.join(home, ".config", "antigravity")) ||
+        has(path.join(home, ".antigravity")) ||
+        has(path.join(home, ".config", "Google", "Antigravity")) ||
+        has(path.join(home, ".gemini"))) found.add("antigravity");
+    if (has(path.join(home, ".config", "Code")) || has(path.join(home, ".vscode"))) found.add("vscode");
+  }
+
+  return found;
+}
+
+/**
+ * Convert a Set / Array of detected client ids into the list of config file
+ * paths to write, given the current platform and (optionally) workspace.
+ * Each client may contribute zero, one, or many file paths.
+ */
+function candidateFilesForClients(workspaceDir, platform, clients, opts = {}) {
+  const files = [];
+  const home = opts.home || os.homedir();
+  const appData = opts.appData || process.env.APPDATA;
+  const set = clients instanceof Set ? clients : new Set(clients || []);
+
+  if (set.has("vscode")) {
+    if (workspaceDir) files.push(path.join(workspaceDir, ".vscode", "mcp.json"));
+    if (platform === "win32" && appData) {
+      files.push(path.join(appData, "Code", "User", "mcp.json"));
+      files.push(path.join(appData, "Code - Insiders", "User", "mcp.json"));
+    } else if (platform === "darwin") {
+      files.push(path.join(home, "Library", "Application Support", "Code", "User", "mcp.json"));
+      files.push(path.join(home, "Library", "Application Support", "Code - Insiders", "User", "mcp.json"));
+    } else if (platform === "linux" || platform === "freebsd") {
+      files.push(path.join(home, ".config", "Code", "User", "mcp.json"));
+      files.push(path.join(home, ".config", "Code - Insiders", "User", "mcp.json"));
+    }
+  }
+
+  if (set.has("cursor")) {
+    if (workspaceDir) files.push(path.join(workspaceDir, ".cursor", "mcp.json"));
+    if (platform === "win32" && appData) {
+      files.push(path.join(appData, "Cursor", "User", "mcp.json"));
+    } else if (platform === "darwin") {
+      files.push(path.join(home, "Library", "Application Support", "Cursor", "User", "mcp.json"));
+      files.push(path.join(home, ".cursor", "mcp.json"));
+    } else if (platform === "linux" || platform === "freebsd") {
+      files.push(path.join(home, ".config", "Cursor", "User", "mcp.json"));
+      files.push(path.join(home, ".cursor", "mcp.json"));
+    }
+  }
+
+  if (set.has("antigravity")) {
+    if (workspaceDir) files.push(path.join(workspaceDir, ".antigravity", "mcp.json"));
+    if (platform === "win32" && appData) {
+      files.push(path.join(appData, "Antigravity", "mcp.json"));
+    } else if (platform === "darwin") {
+      files.push(path.join(home, "Library", "Application Support", "Antigravity", "mcp.json"));
+      files.push(path.join(home, ".antigravity", "mcp.json"));
+    } else if (platform === "linux" || platform === "freebsd") {
+      files.push(path.join(home, ".config", "antigravity", "mcp.json"));
+      files.push(path.join(home, ".antigravity", "mcp.json"));
+      files.push(path.join(home, ".gemini", "antigravity", "mcp.json"));
+    }
+  }
+
+  if (set.has("kilo")) {
+    if (platform === "win32" && appData) {
+      files.push(path.join(appData, "Kilo", "mcp.json"));
+    } else if (platform === "darwin" || platform === "linux" || platform === "freebsd") {
+      files.push(path.join(home, ".config", "kilo", "mcp.json"));
+      files.push(path.join(home, ".kilo", "mcp.json"));
+    }
+  }
+
+  if (set.has("claude-code")) {
+    files.push(path.join(home, ".claude.json"));
+  }
+
+  if (set.has("claude-desktop")) {
+    if (platform === "darwin") {
+      files.push(path.join(home, "Library", "Application Support", "Claude", "claude_desktop_config.json"));
+    } else if (platform === "win32" && appData) {
+      files.push(path.join(appData, "Claude", "claude_desktop_config.json"));
+    } else {
+      files.push(path.join(home, ".config", "Claude", "claude_desktop_config.json"));
+    }
+  }
+
+  return files;
 }
 
 // ---------------------------------------------------------------------------
@@ -195,7 +309,16 @@ function autoConfigure(opts) {
   }
 
   const entry = buildServerEntry(opts.mcpEntry);
-  const files = candidateFiles(opts.workspaceDir, effectivePlatform);
+  // Either use the caller-supplied clients list, fall back to appName-driven
+  // detection, or auto-detect via filesystem markers. opts.clients wins.
+  let clients = opts && opts.clients;
+  if (!clients) {
+    clients = detectClients({ appName: opts && opts.appName });
+  }
+  const files = candidateFilesForClients(opts.workspaceDir, effectivePlatform, clients, {
+    home: opts && opts.home,
+    appData: opts && opts.appData,
+  });
   const results = [];
 
   for (const file of files) {
@@ -206,11 +329,16 @@ function autoConfigure(opts) {
     } catch {
       continue;
     }
-    // Only touch files that look like they belong to a real install —
-    // never create a fresh .vscode/mcp.json in an arbitrary cwd.
+    // Skip workspace-local files (.vscode/mcp.json, .cursor/mcp.json,
+    // .antigravity/mcp.json) when they don't already exist — never create
+    // a fresh client config in an arbitrary cwd. Only the VS Code
+    // extension activation path opts into this.
     const exists = fs.existsSync(file);
-    const isWorkspaceMcp = file.endsWith(path.join(".vscode", "mcp.json"));
-    if (!exists && isWorkspaceMcp && !opts.allowWorkspaceWrite) {
+    const fileName = path.basename(file);
+    const isWorkspaceClientFile = [".vscode", ".cursor", ".antigravity"].some(
+      (d) => file.includes(`${path.sep}${d}${path.sep}`) && file.endsWith(`${path.sep}mcp.json`)
+    );
+    if (!exists && isWorkspaceClientFile && !opts.allowWorkspaceWrite) {
       continue;
     }
     const r = registerInConfigFile(file, entry);
@@ -263,6 +391,8 @@ module.exports = {
   SKIP_ENV,
   shouldSkip,
   isSupportedPlatform,
+  detectClients,
+  candidateFilesForClients,
   buildServerEntry,
   autoConfigure,
   ensureWitrBinary,
