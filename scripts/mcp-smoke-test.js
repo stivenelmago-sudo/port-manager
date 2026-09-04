@@ -125,6 +125,69 @@ async function main() {
   if (!refused.isError) throw new Error("kill_port should refuse without confirm");
   process.stderr.write(`[smoke] kill_port without confirm correctly refused\n`);
 
+  // 8. find_free_port must return a free port
+  const free = await send("tools/call", {
+    name: "find_free_port",
+    arguments: { preferred: 50000, max: 5 },
+  });
+  const freeParsed = JSON.parse(free.content[0].text);
+  if (!freeParsed.found) throw new Error("find_free_port failed to find a free port");
+  process.stderr.write(`[smoke] find_free_port → port=${freeParsed.port}\n`);
+
+  // 9. list_connections — should at least not throw
+  const conns = await send("tools/call", {
+    name: "list_connections",
+    arguments: { state: "LISTEN", limit: 50 },
+  });
+  const connsParsed = JSON.parse(conns.content[0].text);
+  if (typeof connsParsed.count !== "number") throw new Error("list_connections bad shape");
+  process.stderr.write(`[smoke] list_connections → ${connsParsed.count} LISTEN rows (source=${connsParsed.source})\n`);
+
+  // 10. get_process_info — test on self pid (always exists)
+  const pi = await send("tools/call", {
+    name: "get_process_info",
+    arguments: { pid: process.pid },
+  });
+  const piParsed = JSON.parse(pi.content[0].text);
+  if (!piParsed.pid) throw new Error("get_process_info missing pid");
+  process.stderr.write(`[smoke] get_process_info(self) → pid=${piParsed.pid}, comm=${piParsed.comm || piParsed.imageName || "?"}\n`);
+
+  // 11. find_processes_by_name — search for the running node (smoke test)
+  const fpn = await send("tools/call", {
+    name: "find_processes_by_name",
+    arguments: { query: "node", limit: 20 },
+  });
+  const fpnParsed = JSON.parse(fpn.content[0].text);
+  process.stderr.write(`[smoke] find_processes_by_name('node') → ${fpnParsed.count} matches\n`);
+
+  // 12. list_docker_containers — must not throw even when no docker
+  const dc = await send("tools/call", { name: "list_docker_containers", arguments: {} });
+  const dcParsed = JSON.parse(dc.content[0].text);
+  process.stderr.write(`[smoke] list_docker_containers → ${dcParsed.count} containers, runtimes=${JSON.stringify(dcParsed.runtimes)}\n`);
+
+  // 13. list_locks
+  const ll = await send("tools/call", { name: "list_locks", arguments: { limit: 5 } });
+  const llParsed = JSON.parse(ll.content[0].text);
+  process.stderr.write(`[smoke] list_locks → ${llParsed.total} total locks\n`);
+
+  // 14. get_network_interfaces
+  const ni = await send("tools/call", { name: "get_network_interfaces", arguments: {} });
+  const niParsed = JSON.parse(ni.content[0].text);
+  process.stderr.write(`[smoke] get_network_interfaces → ${niParsed.count} addresses\n`);
+
+  // 15. get_system_info
+  const si = await send("tools/call", { name: "get_system_info", arguments: {} });
+  const siParsed = JSON.parse(si.content[0].text);
+  process.stderr.write(`[smoke] get_system_info → ${siParsed.hostname} (${siParsed.cpus.count} CPUs, ${(siParsed.memory.totalBytes / 1e9).toFixed(1)} GB)\n`);
+
+  // 16. kill_by_name must refuse without confirm
+  const refused2 = await send("tools/call", {
+    name: "kill_by_name",
+    arguments: { name: "node", confirm: false },
+  });
+  if (!refused2.isError) throw new Error("kill_by_name should refuse without confirm");
+  process.stderr.write(`[smoke] kill_by_name without confirm correctly refused\n`);
+
   process.stderr.write("[smoke] OK\n");
   server.kill();
   process.exit(0);

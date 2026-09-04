@@ -32,6 +32,7 @@ const {
 
 const portService = require("../src/core/portService");
 const witr = require("../src/witr");
+const systemCommands = require("./commands/system");
 const { PORT } = require("../src/core/constants");
 
 const pkg = require("../package.json");
@@ -53,6 +54,22 @@ function asError(message, extra = {}) {
         text: JSON.stringify({ error: message, ...extra }, null, 2),
       },
     ],
+  };
+}
+
+/**
+ * Adapter: new-style handlers (`async () => asText(...)`) return a
+ * JSON-serialized payload string. Wrap them so the result becomes the
+ * expected content envelope. Also handle the convention where a handler
+ * returns `{error:"..."}` directly (treated as not-an-error but with a
+ * freeform error field present in the payload).
+ */
+function adaptHandler(handler) {
+  return async (args) => {
+    const payload = await handler(args || {});
+    // payload can be either a JSON string (new style) or an object (old).
+    const text = typeof payload === "string" ? payload : JSON.stringify(payload, null, 2);
+    return { content: [{ type: "text", text }] };
   };
 }
 
@@ -270,6 +287,13 @@ const tools = {
       return asText(availability);
     },
   },
+
+  // ─── System / network / process tools (see mcp-server/commands/system.js)
+  ...Object.fromEntries(
+    Object.entries(systemCommands)
+      .filter(([k]) => k !== "_internal")
+      .map(([name, def]) => [name, { description: def.description, inputSchema: def.inputSchema, handler: adaptHandler(def.handler) }])
+  ),
 };
 
 // ---------------------------------------------------------------------------
