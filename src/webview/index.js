@@ -97,6 +97,7 @@ function getWebviewContent(strings = {}) {
     niceValue: "Nice value (-20 to 19)",
     // MCP tools tab
     tabTools: "Tools",
+    _readLabel: "Read",
     mcpMasterLabel: "MCP server",
     mcpMasterOn: "Enabled",
     mcpMasterOff: "Disabled",
@@ -225,34 +226,59 @@ function getLocksPanel(s) {
 function getMcpPanel(s) {
   return /*html*/ `
 <div id="mcpPanel" style="display:none">
-  <div class="mcp-master" id="mcpMaster">
-    <label class="mcp-master-switch">
-      <input type="checkbox" id="mcpEnabledToggle" onchange="mcpToggleEnabled(this.checked)">
-      <span class="mcp-master-label">${escape(s.mcpMasterLabel)}</span>
-      <span class="mcp-master-state" id="mcpMasterState">${escape(s.mcpStatusRunning)}</span>
-    </label>
+  <div class="mcp-master">
+    <div class="mcp-master-row">
+      <label class="mcp-master-switch">
+        <input type="checkbox" id="mcpEnabledToggle" onchange="mcpToggleEnabled(this.checked)">
+        <span class="mcp-slider"></span>
+      </label>
+      <div class="mcp-master-info">
+        <div class="mcp-master-title">
+          <span class="mcp-master-label">${escape(s.mcpMasterLabel)}</span>
+          <span class="mcp-master-state mcp-state-on" id="mcpMasterState">${escape(s.mcpStatusRunning)}</span>
+        </div>
+        <div class="mcp-master-summary" id="mcpSummary">—</div>
+      </div>
+    </div>
     <div class="mcp-master-meta">
-      <span class="mcp-meta-label">${escape(s.mcpServerVersionLabel)}:</span>
-      <span class="mcp-meta-value" id="mcpVersionValue">—</span>
-      <span class="mcp-meta-label">${escape(s.mcpConfigPathHint)}:</span>
-      <span class="mcp-meta-value" id="mcpConfigPathValue">—</span>
+      <div class="mcp-meta-row">
+        <span class="mcp-meta-label">${escape(s.mcpServerVersionLabel)}</span>
+        <span class="mcp-meta-value" id="mcpVersionValue">—</span>
+      </div>
+      <div class="mcp-meta-row">
+        <span class="mcp-meta-label">${escape(s.mcpConfigPathHint)}</span>
+        <span class="mcp-meta-value mcp-meta-path" id="mcpConfigPathValue" title="">—</span>
+      </div>
     </div>
     <div class="mcp-master-actions">
-      <button class="btn btn-sm" id="mcpSelectAllBtn">${escape(s.mcpSelectAll)}</button>
-      <button class="btn btn-sm btn-outline" id="mcpDeselectAllBtn">${escape(s.mcpDeselectAll)}</button>
+      <button class="btn btn-sm" id="mcpSelectAllBtn" type="button">${escape(s.mcpSelectAll)}</button>
+      <button class="btn btn-sm btn-outline" id="mcpDeselectAllBtn" type="button">${escape(s.mcpDeselectAll)}</button>
     </div>
   </div>
-  <table id="mcpTable">
-    <thead>
-      <tr>
-        <th style="width:48px">${escape(s._enabledLabel || "On")}</th>
-        <th>${escape(s._toolLabel || "Tool")}</th>
-        <th style="width:84px">${escape(s._categoryLabel || "Category")}</th>
-        <th>${escape(s._flagsLabel || "Flags")}</th>
-      </tr>
-    </thead>
-    <tbody id="mcpTbody"></tbody>
-  </table>
+  <div class="mcp-section" data-cat="read">
+    <div class="mcp-section-header">
+      <span class="mcp-cat-dot mcp-cat-read"></span>
+      <span class="mcp-section-title">${escape(s._readLabel || s.mcpCategoryRead)}</span>
+      <span class="mcp-section-count" data-cat-count="read">0/0</span>
+    </div>
+    <div class="mcp-tool-list" id="mcpListRead"></div>
+  </div>
+  <div class="mcp-section" data-cat="write">
+    <div class="mcp-section-header">
+      <span class="mcp-cat-dot mcp-cat-write"></span>
+      <span class="mcp-section-title">${escape(s.mcpCategoryWrite)}</span>
+      <span class="mcp-section-count" data-cat-count="write">0/0</span>
+    </div>
+    <div class="mcp-tool-list" id="mcpListWrite"></div>
+  </div>
+  <div class="mcp-section" data-cat="system">
+    <div class="mcp-section-header">
+      <span class="mcp-cat-dot mcp-cat-system"></span>
+      <span class="mcp-section-title">${escape(s.mcpCategorySystem)}</span>
+      <span class="mcp-section-count" data-cat-count="system">0/0</span>
+    </div>
+    <div class="mcp-tool-list" id="mcpListSystem"></div>
+  </div>
   <div class="empty" id="mcpEmpty" style="display:none"></div>
 </div>`;
 }

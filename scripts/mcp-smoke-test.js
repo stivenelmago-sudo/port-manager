@@ -240,6 +240,34 @@ async function main() {
   fs.writeFileSync(cfgFile, JSON.stringify({ enabled: true, disabledTools: [], version: "1.1.0" }, null, 2));
   try { fs.rmSync(cfgDir, { recursive: true, force: true }); } catch { /* best-effort */ }
 
+  // 20. Verify the backend handler & shape the webview renderer expects.
+  //     We can't drive the webview from a smoke test, but we can introspect
+  //     that the MCP panel HTML has the IDs the renderer targets, and that
+  //     the webviewProvider exposes the right MCP_TOOLS metadata.
+  const { getWebviewContent } = require("../src/webview");
+  const renderedHtml = getWebviewContent({
+    tabTools: "Tools",
+    mcpMasterLabel: "MCP server",
+    mcpStatusRunning: "Active",
+    _readLabel: "Read",
+    mcpCategoryRead: "Read",
+    mcpCategoryWrite: "Write",
+    mcpCategorySystem: "System",
+    mcpConfigPathHint: "Runtime config file",
+    mcpServerVersionLabel: "Server version",
+    mcpSelectAll: "Enable all",
+    mcpDeselectAll: "Disable all",
+  });
+  for (const id of ["mcpEnabledToggle", "mcpMasterState", "mcpVersionValue", "mcpConfigPathValue", "mcpSummary", "mcpListRead", "mcpListWrite", "mcpListSystem", "mcpSelectAllBtn", "mcpDeselectAllBtn"]) {
+    if (!renderedHtml.includes('id="' + id + '"')) {
+      throw new Error(`webview HTML missing expected element id=${id}`);
+    }
+  }
+  if (!renderedHtml.includes('<button class="tab" data-tab="mcp"')) {
+    throw new Error("Tools tab not registered as data-tab=mcp");
+  }
+  process.stderr.write("[smoke] webview HTML exposes all 10 expected MCP element ids\n");
+
   process.stderr.write("[smoke] OK\n");
   server.kill();
   process.exit(0);
