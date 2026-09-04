@@ -127,6 +127,73 @@ function isSupportedPlatform(override) {
 }
 
 // ---------------------------------------------------------------------------
+// MCP runtime config (read by the spawned server)
+// ---------------------------------------------------------------------------
+
+/**
+ * Absolute path where the extension writes the MCP runtime config
+ * (`enabled` + `disabledTools`) that the spawned MCP server picks up.
+ */
+function mcpConfigPath(opts = {}) {
+  const home = opts.home || os.homedir();
+  const appData = opts.appData || process.env.APPDATA;
+  const platform = opts.platform || process.platform;
+  if (platform === "darwin") {
+    return path.join(home, "Library", "Application Support", "portpilot", "mcp.json");
+  }
+  if (platform === "win32" && appData) {
+    return path.join(appData, "portpilot", "mcp.json");
+  }
+  const xdg = process.env.XDG_CONFIG_HOME || path.join(home, ".config");
+  return path.join(xdg, "portpilot", "mcp.json");
+}
+
+/**
+ * Write the MCP runtime config to disk. Called by the extension when
+ * VS Code settings (`portManager.mcp.enabled`, `portManager.mcp.disabledTools`)
+ * change. Safe to call repeatedly — overwrites atomically.
+ *
+ * @param {Object} opts
+ * @param {boolean} opts.enabled
+ * @param {string[]} opts.disabledTools
+ * @param {string} [opts.version] extension version, stamped into the file
+ * @returns {{path:string, written:boolean}}
+ */
+function syncMcpConfig(opts) {
+  if (!isSupportedPlatform()) return { path: null, written: false };
+  const file = mcpConfigPath();
+  const data = {
+    enabled: opts.enabled !== false,
+    disabledTools: Array.isArray(opts.disabledTools) ? opts.disabledTools.slice() : [],
+    version: opts.version || "0.0.0",
+    updatedAt: new Date().toISOString(),
+  };
+  try {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    const tmp = file + ".tmp";
+    fs.writeFileSync(tmp, JSON.stringify(data, null, 2) + "\n", "utf8");
+    fs.renameSync(tmp, file);
+    return { path: file, written: true };
+  } catch (e) {
+    return { path: file, written: false, error: e.message };
+  }
+}
+
+/**
+ * Read the MCP runtime config from disk (used by tests + the extension to
+ * verify its own writes).
+ */
+function readMcpConfig(opts) {
+  const file = mcpConfigPath(opts);
+  try {
+    if (!fs.existsSync(file)) return null;
+    return JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Client detection
 // ---------------------------------------------------------------------------
 
@@ -393,6 +460,9 @@ module.exports = {
   isSupportedPlatform,
   detectClients,
   candidateFilesForClients,
+  mcpConfigPath,
+  syncMcpConfig,
+  readMcpConfig,
   buildServerEntry,
   autoConfigure,
   ensureWitrBinary,

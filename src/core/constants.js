@@ -17,8 +17,6 @@ module.exports = {
   PORT: {
     MIN: 1,
     MAX: 65535,
-    DEFAULT_SCAN_FROM: 3000,
-    DEFAULT_SCAN_TO: 9999,
   },
 
   // Message types for webview communication
@@ -34,7 +32,6 @@ module.exports = {
     REFRESH: "refresh",
     KILL: "kill",
     BULK_KILL: "bulkKill",
-    SCAN: "scan",
     SET_LANGUAGE: "setLanguage",
     OPEN_EXTERNAL: "openExternal",
     REFRESH_PROCESSES: "refreshProcesses",

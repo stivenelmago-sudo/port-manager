@@ -426,30 +426,6 @@ module.exports = function getStyles() {
 
   /* Checkbox */
   input[type="checkbox"] { accent-color: var(--accent); }
-
-  /* Scan panel */
-  .scan-panel {
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  .scan-panel input[type="number"] {
-    width: 80px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    border: 1px solid var(--input-border);
-    background: var(--input-bg);
-    color: var(--input-fg);
-    font-family: inherit;
-    font-size: 12px;
-  }
-
-  .scan-panel label { font-size: 12px; opacity: 0.6; }
-
   /* Ancestry column */
   .ancestry {
     max-width: 360px;

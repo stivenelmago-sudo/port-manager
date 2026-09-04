@@ -27,7 +27,6 @@ module.exports = function getScript(strings = {}) {
     emptyProcesses: strings.emptyProcesses || "No processes found",
     toastKilled: strings.toastKilled || "was killed",
     toastKillFailed: strings.toastKillFailed || "Kill failed",
-    toastScan: strings.toastScan || "Used / Free",
     bulkKill: strings.bulkKill || "KILL Selected",
     actionCopy: strings.actionCopy || "Copy",
     copied: strings.copied || "Copied",
@@ -44,9 +43,7 @@ module.exports = function getScript(strings = {}) {
     containerMounts: strings.containerMounts || "Mounts",
     containerNetworks: strings.containerNetworks || "Networks",
     containerEnv: strings.containerEnv || "Env (first 30)",
-    scanResult: strings.scanResult || "Used / Free",
-    refresh: strings.refresh || "Refresh",
-    rangeScan: strings.rangeScan || "Range Scan",
+
     ancestryNone: strings.ancestryNone || "—",
     ancestryLoading: strings.ancestryLoading || "loading…",
     witrMissing: strings.witrMissing || "Process ancestry unavailable",
@@ -259,9 +256,6 @@ module.exports = function getScript(strings = {}) {
         showToast(tpl(T.toastKillFailed, msg.error), "error");
         confirmingKill = null;
         render();
-        break;
-      case "scanResult":
-        showToast(T.scanResult + " " + msg.used + "/" + msg.free, "success");
         break;
     }
   });

@@ -14,6 +14,7 @@ const { listLocks, listInterestingFds } = require("../core/lockService");
 const { MESSAGE_TYPE, COMMAND } = require("../core/constants");
 const { probe } = require("../witr");
 const i18n = require("../i18n");
+const autoConfig = require("../mcp/autoConfig");
 
 function createWebviewProvider(ctx) {
   const witrAvailability = ctx ? probe(ctx) : { status: "skipped", hint: "no context" };
@@ -62,14 +63,20 @@ async function handleMessage(msg, webview, witrAvailability) {
     case COMMAND.BULK_KILL:
       await handleBulkKill(msg, webview);
       break;
-    case COMMAND.SCAN:
-      handleScan(msg, webview);
-      break;
     case COMMAND.SET_LANGUAGE:
       handleSetLanguage(msg.lang);
       break;
     case COMMAND.OPEN_EXTERNAL:
       handleOpenExternal(msg.uri);
+      break;
+    case COMMAND.MCP_LIST:
+      sendMcpState(webview);
+      break;
+    case COMMAND.MCP_TOGGLE_ENABLED:
+      handleMcpToggleEnabled(webview, msg.enabled);
+      break;
+    case COMMAND.MCP_TOGGLE_TOOL:
+      handleMcpToggleTool(webview, msg.tool, msg.enabled);
       break;
   }
 }
@@ -342,20 +349,6 @@ async function handleBulkKill(msg, webview) {
       error: errors.join("; "),
     });
   }
-}
-
-function handleScan(msg, _webview) {
-  const ports = getListeningPorts();
-  const usedSet = new Set(ports.map((p) => p.port));
-  let freeCount = 0;
-  let usedCount = 0;
-  for (let p = msg.from; p <= msg.to; p++) {
-    if (usedSet.has(p)) usedCount++;
-    else freeCount++;
-  }
-  vscode.window.showInformationMessage(
-    i18n.tr("webview.toastScan", usedCount, freeCount)
-  );
 }
 
 async function handleSetLanguage(lang) {

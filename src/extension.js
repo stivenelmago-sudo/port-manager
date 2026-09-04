@@ -10,6 +10,24 @@ const { createWebviewProvider } = require("./providers/webviewProvider");
 const { registerCommands } = require("./commands");
 const i18n = require("./i18n");
 const mcpProvider = require("./mcp/vscodeProvider");
+const autoConfig = require("./mcp/autoConfig");
+
+/**
+ * Sync the current MCP settings (enabled + disabledTools) to the runtime
+ * config file the spawned MCP server reads on every call.
+ */
+function syncMcpRuntimeConfig() {
+  try {
+    const cfg = vscode.workspace.getConfiguration("portManager.mcp");
+    autoConfig.syncMcpConfig({
+      enabled: cfg.get("enabled", true) !== false,
+      disabledTools: cfg.get("disabledTools", []) || [],
+      version: require("../package.json").version,
+    });
+  } catch (e) {
+    console.warn(`[portpilot] syncMcpConfig failed: ${e.message}`);
+  }
+}
 
 /**
  * Extension activation
@@ -22,6 +40,10 @@ function activate(context) {
   // (1.101+). Also writes a portpilot entry into any known client config
   // files (Kilo, Claude Code, Claude Desktop) on a best-effort basis.
   mcpProvider.register(context);
+
+  // Push current MCP settings to the runtime config file so a freshly
+  // spawned server picks them up immediately.
+  syncMcpRuntimeConfig();
 
   // Register sidebar webview provider
   const provider = createWebviewProvider(context);
@@ -44,6 +66,9 @@ function activate(context) {
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("portManager.language")) {
         i18n.setLanguage(i18n.detectLanguage());
+      }
+      if (e.affectsConfiguration("portManager.mcp")) {
+        syncMcpRuntimeConfig();
       }
     })
   );
