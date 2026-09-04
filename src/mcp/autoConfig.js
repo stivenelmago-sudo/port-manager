@@ -175,11 +175,6 @@ function detectClients(opts = {}) {
   if (appName.includes("vs code") || appName.includes("visual studio code") || appName.includes("code - insiders")) {
     found.add("vscode");
   }
-  // GitHub Copilot Chat runs inside VS Code and reads the same MCP config.
-  // Whenever the VS Code engine is active we also tag "copilot" so callers
-  // can choose to log / write a more specific entry — currently the entries
-  // are identical, so the Set just records the detection.
-  if (found.has("vscode")) found.add("copilot");
 
   // 2. Filesystem markers (works without an active editor — e.g. from npm postinstall)
   const has = (p) => { try { return fs.existsSync(p); } catch { return false; } };
@@ -200,6 +195,11 @@ function detectClients(opts = {}) {
         has(path.join(home, ".gemini"))) found.add("antigravity");
     if (has(path.join(home, ".config", "Code")) || has(path.join(home, ".vscode"))) found.add("vscode");
   }
+
+  // GitHub Copilot Chat runs inside the VS Code engine and reads the same
+  // MCP config files. Tag "copilot" whenever vscode is detected (either
+  // from appName or filesystem marker) so callers can log accordingly.
+  if (found.has("vscode")) found.add("copilot");
 
   return found;
 }
