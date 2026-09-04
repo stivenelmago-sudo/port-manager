@@ -92,6 +92,22 @@ module.exports = function getScript(strings = {}) {
     actionResume: strings.actionResume || "Resume",
     actionRenice: strings.actionRenice || "Renice",
     niceValue: strings.niceValue || "Nice value (-20 to 19)",
+    // MCP tools tab
+    tabTools: strings.tabTools || "Tools",
+    mcpMasterLabel: strings.mcpMasterLabel || "MCP server",
+    mcpMasterOn: strings.mcpMasterOn || "Enabled",
+    mcpMasterOff: strings.mcpMasterOff || "Disabled",
+    mcpStatusRunning: strings.mcpStatusRunning || "Active",
+    mcpStatusStopped: strings.mcpStatusStopped || "Stopped",
+    mcpAutoconfigHint: strings.mcpAutoconfigHint || "Auto-registered with VS Code, Cursor, Copilot, etc.",
+    mcpCategoryRead: strings.mcpCategoryRead || "Read",
+    mcpCategoryWrite: strings.mcpCategoryWrite || "Write",
+    mcpCategorySystem: strings.mcpCategorySystem || "System",
+    mcpDestructiveFlag: strings.mcpDestructiveFlag || "destructive",
+    mcpConfigPathHint: strings.mcpConfigPathHint || "Runtime config file",
+    mcpServerVersionLabel: strings.mcpServerVersionLabel || "Server version",
+    mcpSelectAll: strings.mcpSelectAll || "Enable all",
+    mcpDeselectAll: strings.mcpDeselectAll || "Disable all",
   });
 
   return /*javascript*/ `
