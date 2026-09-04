@@ -184,6 +184,7 @@ function getTabs(s) {
 function getContainersPanel(s) {
   return /*html*/ `
 <div id="containersPanel" style="display:none">
+  <div class="table-scroll">
   <table id="containersTable">
     <thead>
       <tr>
@@ -197,6 +198,7 @@ function getContainersPanel(s) {
     </thead>
     <tbody id="containersTbody"></tbody>
   </table>
+  </div>
   <div class="empty" id="containersEmpty" style="display:none">${escape(s.emptyContainers)}</div>
 </div>`;
 }
@@ -207,6 +209,7 @@ function getLocksPanel(s) {
   <label class="locks-toggle">
     <input type="checkbox" id="locksAllOpen"> ${escape(s.locksAllOpen)}
   </label>
+  <div class="table-scroll">
   <table id="locksTable">
     <thead>
       <tr>
@@ -219,6 +222,7 @@ function getLocksPanel(s) {
     </thead>
     <tbody id="locksTbody"></tbody>
   </table>
+  </div>
   <div class="empty" id="locksEmpty" style="display:none">${escape(s.emptyLocks)}</div>
 </div>`;
 }
@@ -321,6 +325,7 @@ function getTable(s) {
   const th = (col, sortKey, tab, label, extra) =>
     `<th data-col="${col}" data-sort="${sortKey}" data-tab="${tab}" draggable="true" onclick="sortBy('${sortKey}')"${extra ? " " + extra : ""}>${label}${resizeHandle}</th>`;
   return /*html*/ `
+<div class="table-scroll">
 <table id="mainTable">
   <colgroup id="mainColgroup"></colgroup>
   <thead>
@@ -341,8 +346,9 @@ function getTable(s) {
       <th data-col="action" style="text-align:right" class="col-action">${escape(s.colAction)}</th>
     </tr>
   </thead>
-  <tbody id="tbody"></tbody>
-</table>`;
+    <tbody id="tbody"></tbody>
+</table>
+</div>`;
 }
 
 function getDetailsPanel(s) {

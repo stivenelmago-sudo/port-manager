@@ -314,6 +314,14 @@ module.exports = function getStyles() {
 
   /* Table */
   table { width: 100%; border-collapse: collapse; }
+  .table-scroll {
+    overflow-x: auto;
+    overflow-y: visible;
+    max-width: 100%;
+  }
+  .table-scroll table {
+    min-width: max-content;
+  }
 
   thead th {
     text-align: left;
