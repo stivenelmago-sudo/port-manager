@@ -11,6 +11,8 @@
   "config.witr.enabled.description": "Activar el enriquecimiento de ancestros de proceso con WITR (binario incluido)",
   "config.witr.binaryPath.description": "Ruta al binario de witr (vacío = usar el incluido)",
   "config.mcp.autoconfig.description": "Registrar automáticamente el servidor MCP de PortPilot en VS Code y otros clientes al activar",
+  "config.mcp.enabled.description": "Habilitar el servidor MCP de PortPilot",
+  "config.mcp.disabledTools.description": "Lista de nombres de herramientas MCP para deshabilitar",
   "mcp.providerLabel": "PortPilot",
   "setLanguage.prompt": "Seleccionar idioma",
   "setLanguage.current": "actual",

@@ -11,6 +11,8 @@
   "config.witr.enabled.description": "启用 WITR 进程来源链丰富(已内置二进制)",
   "config.witr.binaryPath.description": "witr 二进制路径(留空 = 使用内置)",
   "config.mcp.autoconfig.description": "激活时自动在 VS Code 和其他客户端中注册 PortPilot MCP 服务器",
+  "config.mcp.enabled.description": "启用 PortPilot MCP 服务器",
+  "config.mcp.disabledTools.description": "要禁用的 MCP 工具名称列表",
   "mcp.providerLabel": "PortPilot",
   "setLanguage.prompt": "选择语言",
   "setLanguage.current": "当前",

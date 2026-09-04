@@ -11,6 +11,8 @@
   "config.witr.enabled.description": "تفعيل إثراء سلسلة العملية عبر WITR (الملف الثنائي مضمن)",
   "config.witr.binaryPath.description": "مسار ملف witr الثنائي (فارغ = استخدام المضمن)",
   "config.mcp.autoconfig.description": "تسجيل خادم PortPilot MCP تلقائيًا في VS Code والعملاء الآخرين عند التفعيل",
+  "config.mcp.enabled.description": "تمكين خادم PortPilot MCP",
+  "config.mcp.disabledTools.description": "قائمة أسماء أدوات MCP لتعطيلها",
   "mcp.providerLabel": "PortPilot",
   "setLanguage.prompt": "اختر اللغة",
   "setLanguage.current": "الحالي",

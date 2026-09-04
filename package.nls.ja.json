@@ -11,6 +11,8 @@
   "config.witr.enabled.description": "WITR プロセス祖先情報の拡充を有効化(バイナリ同梱)",
   "config.witr.binaryPath.description": "witr バイナリのパス(空 = 同梱版を使用)",
   "config.mcp.autoconfig.description": "有効化時に PortPilot MCP サーバーを VS Code や他のクライアントに自動登録する",
+  "config.mcp.enabled.description": "PortPilot MCP サーバーを有効にする",
+  "config.mcp.disabledTools.description": "無効にする MCP ツール名のリスト",
   "mcp.providerLabel": "PortPilot",
   "setLanguage.prompt": "言語を選択",
   "setLanguage.current": "現在",

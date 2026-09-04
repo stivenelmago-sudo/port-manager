@@ -372,4 +372,86 @@ function handleOpenExternal(uri) {
   vscode.env.openExternal(vscode.Uri.parse(trimmed));
 }
 
+// ─── MCP server configuration panel ─────────────────────────────────────────
+
+/**
+ * Tools the MCP server exposes. The webview renders these as toggles; the
+ * authoritative list lives here so we don't depend on the spawned server to
+ * introspect itself. Keep in sync with `mcp-server/index.js` and
+ * `mcp-server/commands/system.js`.
+ */
+const MCP_TOOLS = [
+  { name: "list_listening_ports",   category: "read",   destructive: false },
+  { name: "check_port",             category: "read",   destructive: false },
+  { name: "find_ports_by_process",  category: "read",   destructive: false },
+  { name: "get_port_info",          category: "read",   destructive: false },
+  { name: "find_free_port",         category: "read",   destructive: false },
+  { name: "list_connections",       category: "read",   destructive: false },
+  { name: "get_process_info",       category: "read",   destructive: false },
+  { name: "find_processes_by_name", category: "read",   destructive: false },
+  { name: "list_docker_containers", category: "system", destructive: false },
+  { name: "list_locks",             category: "system", destructive: false },
+  { name: "get_network_interfaces", category: "system", destructive: false },
+  { name: "get_system_info",        category: "system", destructive: false },
+  { name: "witr_availability",      category: "system", destructive: false },
+  { name: "kill_port",              category: "write",  destructive: true },
+  { name: "kill_pid",               category: "write",  destructive: true },
+  { name: "kill_by_name",           category: "write",  destructive: true },
+];
+
+function readMcpSettings() {
+  const cfg = vscode.workspace.getConfiguration("portManager.mcp");
+  const disabled = cfg.get("disabledTools", []) || [];
+  return {
+    enabled: cfg.get("enabled", true) !== false,
+    disabledTools: Array.isArray(disabled) ? disabled.slice() : [],
+  };
+}
+
+async function persistMcpSettings(patch) {
+  const cfg = vscode.workspace.getConfiguration("portManager.mcp");
+  if (patch && Object.prototype.hasOwnProperty.call(patch, "enabled")) {
+    await cfg.update("enabled", !!patch.enabled, vscode.ConfigurationTarget.Global);
+  }
+  if (patch && Object.prototype.hasOwnProperty.call(patch, "disabledTools")) {
+    await cfg.update("disabledTools", patch.disabledTools.slice(), vscode.ConfigurationTarget.Global);
+  }
+  // Push to runtime config so the spawned MCP server picks it up immediately.
+  try {
+    autoConfig.syncMcpConfig({
+      enabled: patch.enabled !== undefined ? !!patch.enabled : readMcpSettings().enabled,
+      disabledTools: patch.disabledTools !== undefined ? patch.disabledTools : readMcpSettings().disabledTools,
+      version: require("../package.json").version,
+    });
+  } catch (e) {
+    console.warn(`[portpilot] syncMcpConfig failed: ${e.message}`);
+  }
+}
+
+function sendMcpState(webview) {
+  const s = readMcpSettings();
+  webview.postMessage({
+    type: "mcpState",
+    enabled: s.enabled,
+    disabledTools: s.disabledTools,
+    tools: MCP_TOOLS,
+    autoconfig: vscode.workspace.getConfiguration("portManager.mcp").get("autoconfig", true) !== false,
+    configPath: autoConfig.mcpConfigPath(),
+    version: require("../package.json").version,
+  });
+}
+
+async function handleMcpToggleEnabled(webview, enabled) {
+  await persistMcpSettings({ ...readMcpSettings(), enabled: !!enabled });
+  sendMcpState(webview);
+}
+
+async function handleMcpToggleTool(webview, tool, enabled) {
+  const s = readMcpSettings();
+  const next = new Set(s.disabledTools);
+  if (enabled) next.delete(tool); else next.add(tool);
+  await persistMcpSettings({ ...s, disabledTools: [...next] });
+  sendMcpState(webview);
+}
+
 module.exports = { createWebviewProvider };

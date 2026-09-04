@@ -11,6 +11,8 @@
   "config.witr.enabled.description": "WITR प्रक्रिया वंश एन्हांसमेंट सक्षम करें (बंडल बाइनरी)",
   "config.witr.binaryPath.description": "witr बाइनरी का पथ (खाली = बंडल का उपयोग करें)",
   "config.mcp.autoconfig.description": "सक्रियण पर VS Code और अन्य क्लाइंट्स में PortPilot MCP सर्वर को स्वचालित रूप से पंजीकृत करें",
+  "config.mcp.enabled.description": "PortPilot MCP सर्वर सक्षम करें",
+  "config.mcp.disabledTools.description": "अक्षम करने के लिए MCP टूल नामों की सूची",
   "mcp.providerLabel": "PortPilot",
   "setLanguage.prompt": "भाषा चुनें",
   "setLanguage.current": "वर्तमान",

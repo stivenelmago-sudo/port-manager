@@ -95,6 +95,22 @@ function getWebviewContent(strings = {}) {
     actionResume: "Resume",
     actionRenice: "Renice",
     niceValue: "Nice value (-20 to 19)",
+    // MCP tools tab
+    tabTools: "Tools",
+    mcpMasterLabel: "MCP server",
+    mcpMasterOn: "Enabled",
+    mcpMasterOff: "Disabled",
+    mcpStatusRunning: "Active",
+    mcpStatusStopped: "Stopped",
+    mcpAutoconfigHint: "Auto-registered with VS Code, Cursor, Copilot, etc.",
+    mcpCategoryRead: "Read",
+    mcpCategoryWrite: "Write",
+    mcpCategorySystem: "System",
+    mcpDestructiveFlag: "destructive",
+    mcpConfigPathHint: "Runtime config file",
+    mcpServerVersionLabel: "Server version",
+    mcpSelectAll: "Enable all",
+    mcpDeselectAll: "Disable all",
   }, strings);
   s._supported = strings._supported || [];
 
@@ -115,6 +131,7 @@ function getWebviewContent(strings = {}) {
   ${getTable(s)}
   ${getContainersPanel(s)}
   ${getLocksPanel(s)}
+  ${getMcpPanel(s)}
   <div class="empty" id="empty" style="display:none">${escape(s.empty)}</div>
   ${getDetailsPanel(s)}
   <div id="toastContainer"></div>
@@ -155,6 +172,7 @@ function getTabs(s) {
   <button class="tab" data-tab="processes" role="tab" aria-selected="false">${escape(s.tabProcesses)}</button>
   <button class="tab" data-tab="containers" role="tab" aria-selected="false">${escape(s.tabContainers)}</button>
   <button class="tab" data-tab="locks" role="tab" aria-selected="false">${escape(s.tabLocks)}</button>
+  <button class="tab" data-tab="mcp" role="tab" aria-selected="false">${escape(s.tabTools)}</button>
   <button class="tab-refresh" id="autoRefreshToggle" title="${escape(s.autoRefreshOn)}">
     <span class="dot dot-pulse"></span>
     <span id="autoRefreshLabel">${escape(s.autoRefreshOn)}</span>
@@ -201,6 +219,41 @@ function getLocksPanel(s) {
     <tbody id="locksTbody"></tbody>
   </table>
   <div class="empty" id="locksEmpty" style="display:none">${escape(s.emptyLocks)}</div>
+</div>`;
+}
+
+function getMcpPanel(s) {
+  return /*html*/ `
+<div id="mcpPanel" style="display:none">
+  <div class="mcp-master" id="mcpMaster">
+    <label class="mcp-master-switch">
+      <input type="checkbox" id="mcpEnabledToggle" onchange="mcpToggleEnabled(this.checked)">
+      <span class="mcp-master-label">${escape(s.mcpMasterLabel)}</span>
+      <span class="mcp-master-state" id="mcpMasterState">${escape(s.mcpStatusRunning)}</span>
+    </label>
+    <div class="mcp-master-meta">
+      <span class="mcp-meta-label">${escape(s.mcpServerVersionLabel)}:</span>
+      <span class="mcp-meta-value" id="mcpVersionValue">—</span>
+      <span class="mcp-meta-label">${escape(s.mcpConfigPathHint)}:</span>
+      <span class="mcp-meta-value" id="mcpConfigPathValue">—</span>
+    </div>
+    <div class="mcp-master-actions">
+      <button class="btn btn-sm" id="mcpSelectAllBtn">${escape(s.mcpSelectAll)}</button>
+      <button class="btn btn-sm btn-outline" id="mcpDeselectAllBtn">${escape(s.mcpDeselectAll)}</button>
+    </div>
+  </div>
+  <table id="mcpTable">
+    <thead>
+      <tr>
+        <th style="width:48px">${escape(s._enabledLabel || "On")}</th>
+        <th>${escape(s._toolLabel || "Tool")}</th>
+        <th style="width:84px">${escape(s._categoryLabel || "Category")}</th>
+        <th>${escape(s._flagsLabel || "Flags")}</th>
+      </tr>
+    </thead>
+    <tbody id="mcpTbody"></tbody>
+  </table>
+  <div class="empty" id="mcpEmpty" style="display:none"></div>
 </div>`;
 }
 
