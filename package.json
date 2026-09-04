@@ -81,6 +81,17 @@
           "type": "boolean",
           "default": true,
           "description": "%config.mcp.autoconfig.description%"
+        },
+        "portManager.mcp.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.mcp.enabled.description%"
+        },
+        "portManager.mcp.disabledTools": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "%config.mcp.disabledTools.description%"
         }
       }
     },

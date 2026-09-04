@@ -26,10 +26,7 @@ function getWebviewContent(strings = {}) {
   const s = Object.assign({
     searchPlaceholder: "",
     refresh: "Refresh",
-    rangeScan: "Range Scan",
     bulkKill: "KILL Selected",
-    range: "Range:",
-    run: "Run",
     statsUsed: "Used",
     statsFree: "Free",
     statsTotal: "Total",
@@ -114,7 +111,6 @@ function getWebviewContent(strings = {}) {
   ${getLogoHeader()}
   ${getTabs(s)}
   ${getToolbar(s)}
-  ${getScanPanel(s)}
   <div class="stats" id="stats"></div>
   ${getTable(s)}
   ${getContainersPanel(s)}
@@ -223,7 +219,6 @@ function getToolbar(s) {
 <div class="toolbar">
   <input type="text" id="search" placeholder="${escape(s.searchPlaceholder || "Search by port / process name...")}" />
   <button class="btn" onclick="refresh()">${escape(s.refresh)}</button>
-  <button class="btn btn-outline" id="rangeScanBtn" onclick="toggleScan()">${escape(s.rangeScan)}</button>
   <button class="btn btn-danger" id="bulkKillBtn" style="display:none" onclick="bulkKill()">${escape(s.bulkKill)}</button>
   <div class="lang-dropdown" id="langDropdown">
     <button type="button" class="lang-trigger" id="langTrigger" onclick="toggleLangMenu(event)" title="${escape(s.langMenu || "Language")}" aria-haspopup="listbox" aria-expanded="false">
@@ -235,17 +230,6 @@ function getToolbar(s) {
       ${langItems}
     </div>
   </div>
-</div>`;
-}
-
-function getScanPanel(s) {
-  return /*html*/ `
-<div class="scan-panel" id="scanPanel" style="display:none">
-  <label>${escape(s.range)}</label>
-  <input type="number" id="scanFrom" value="3000">
-  <span style="opacity:0.4">〜</span>
-  <input type="number" id="scanTo" value="9999">
-  <button class="btn btn-sm" onclick="scanRange()">${escape(s.run)}</button>
 </div>`;
 }
 

@@ -33,6 +33,7 @@ const {
 const portService = require("../src/core/portService");
 const witr = require("../src/witr");
 const systemCommands = require("./commands/system");
+const mcpConfig = require("./mcpConfig");
 const { PORT } = require("../src/core/constants");
 
 const pkg = require("../package.json");
@@ -314,17 +315,39 @@ const server = new Server(
 );
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
+  const allDefs = Object.entries(tools).map(([name, def]) => ({
+    name,
+    description: def.description,
+    inputSchema: def.inputSchema,
+  }));
+  const cfg = mcpConfig.readConfig();
+  const { tools: filtered } = mcpConfig.applyToTools(allDefs, cfg);
   return {
-    tools: Object.entries(tools).map(([name, def]) => ({
-      name,
-      description: def.description,
-      inputSchema: def.inputSchema,
-    })),
+    tools: filtered,
+    // metadata for clients that surface it (most ignore unknown fields)
+    _portpilot: {
+      enabled: cfg.enabled,
+      disabledTools: cfg.disabledTools,
+      blocked: allDefs.map((t) => t.name).filter((n) => !filtered.find((f) => f.name === n)),
+      configPath: cfg.path,
+      serverVersion: pkg.version,
+    },
   };
 });
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args = {} } = request.params;
+  const cfg = mcpConfig.readConfig();
+  if (!cfg.enabled) {
+    return asError("MCP server is disabled via configuration", {
+      hint: `Set portManager.mcp.enabled=true in VS Code settings (config: ${cfg.path})`,
+    });
+  }
+  if ((cfg.disabledTools || []).includes(name)) {
+    return asError(`Tool ${name} is disabled in configuration`, {
+      hint: `Remove ${name} from portManager.mcp.disabledTools to enable`,
+    });
+  }
   const tool = tools[name];
   if (!tool) {
     return asError(`Unknown tool: ${name}`);
@@ -335,6 +358,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     return asError(`Tool ${name} failed: ${e.message}`);
   }
 });
+
+// Extra resource: live config snapshot.
+server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+  const { uri } = request.params;
 
 // Expose a small set of static resources so clients can read extension metadata.
 server.setRequestHandler(ListResourcesRequestSchema, async () => {
@@ -350,6 +377,12 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
         uri: "portpilot://witr",
         name: "WITR Availability",
         description: "Current WITR binary availability and resolved path.",
+        mimeType: "application/json",
+      },
+      {
+        uri: "portpilot://mcp-config",
+        name: "MCP Runtime Config",
+        description: "Live snapshot of { enabled, disabledTools, configPath, serverVersion } read from disk on every access.",
         mimeType: "application/json",
       },
     ],
@@ -383,6 +416,14 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     return {
       contents: [
         { uri, mimeType: "application/json", text: JSON.stringify(availability, null, 2) },
+      ],
+    };
+  }
+  if (uri === "portpilot://mcp-config") {
+    const cfg = mcpConfig.readConfig();
+    return {
+      contents: [
+        { uri, mimeType: "application/json", text: JSON.stringify(cfg, null, 2) },
       ],
     };
   }

@@ -191,7 +191,6 @@ module.exports = function getScript(strings = {}) {
     detailsTitle: () => document.querySelector("#detailsPanel .details-title"),
     empty: () => document.getElementById("empty"),
     search: () => document.getElementById("search"),
-    scanPanel: () => document.getElementById("scanPanel"),
     bulkKillBtn: () => document.getElementById("bulkKillBtn"),
     toastContainer: () => document.getElementById("toastContainer"),
     selectAll: () => document.getElementById("selectAll"),
@@ -293,7 +292,6 @@ module.exports = function getScript(strings = {}) {
     const locksPanel = document.getElementById("locksPanel");
     if (containersPanel) containersPanel.style.display = tab === "containers" ? "block" : "none";
     if (locksPanel) locksPanel.style.display = tab === "locks" ? "block" : "none";
-    elements.scanPanel().style.display = "none";
     elements.bulkKillBtn().style.display = "none";
 
     // Reset sort per tab
@@ -1052,17 +1050,6 @@ module.exports = function getScript(strings = {}) {
     selected.clear();
   }
 
-  function toggleScan() {
-    const panel = elements.scanPanel();
-    panel.style.display = panel.style.display === "none" ? "flex" : "none";
-  }
-
-  function scanRange() {
-    const from = parseInt(elements.scanFrom().value) || 3000;
-    const to = parseInt(elements.scanTo().value) || 9999;
-    vscode.postMessage({ command: "scan", from, to });
-  }
-
   function changeLang(lang) { if (lang) vscode.postMessage({ command: "setLanguage", lang }); }
 
   function toggleLangMenu(evt) {
@@ -1375,10 +1362,7 @@ module.exports = function getScript(strings = {}) {
   window.cancelKill = cancelKill;
   window.confirmKill = confirmKill;
   window.rowClicked = rowClicked;
-  window.bulkKill = bulkKill;
-  window.toggleScan = toggleScan;
-  window.scanRange = scanRange;
-  window.changeLang = changeLang;
+  window.bulkKill = bulkKill;  window.changeLang = changeLang;
   window.toggleLangMenu = toggleLangMenu;
   window.pickLang = pickLang;
   window.closeLangMenu = closeLangMenu;

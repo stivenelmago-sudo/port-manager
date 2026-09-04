@@ -44,6 +44,9 @@ module.exports = {
     GET_CONTAINER_DETAILS: "getContainerDetails",
     CONTAINER_ACTION: "containerAction",
     PROCESS_ACTION: "processAction",
+    MCP_LIST: "mcpList",
+    MCP_TOGGLE_ENABLED: "mcpToggleEnabled",
+    MCP_TOGGLE_TOOL: "mcpToggleTool",
   },
 
   // Port states
