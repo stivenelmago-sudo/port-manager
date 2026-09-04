@@ -6,10 +6,19 @@
  */
 
 const { spawn } = require("child_process");
+const fs = require("fs");
+const os = require("os");
 const path = require("path");
+
+// Pre-create a runtime config file and point the server at it via env so
+// we can mutate it later in the test to verify reactive filtering.
+const cfgDir = fs.mkdtempSync(path.join(os.tmpdir(), "portpilot-mcp-"));
+const cfgFile = path.join(cfgDir, "mcp.json");
+fs.writeFileSync(cfgFile, JSON.stringify({ enabled: true, disabledTools: [], version: "1.1.0" }, null, 2));
 
 const server = spawn(process.execPath, [path.join(__dirname, "..", "mcp-server", "index.js")], {
   stdio: ["pipe", "pipe", "inherit"],
+  env: { ...process.env, PORTPILOT_MCP_CONFIG: cfgFile },
 });
 
 let buffer = Buffer.alloc(0);
@@ -188,16 +197,9 @@ async function main() {
   if (!refused2.isError) throw new Error("kill_by_name should refuse without confirm");
   process.stderr.write(`[smoke] kill_by_name without confirm correctly refused\n`);
 
-  // 17. MCP runtime config: write a config disabling some tools and one
-  //     path-suppression check, then verify tools/list drops them and
-  //     tools/call returns isError for the disabled ones.
-  const { writeFileSync, mkdirSync, mkdtempSync, existsSync } = require("fs");
-  const { tmpdir } = require("os");
-  const path = require("path");
-  const cfgDir = mkdtempSync(path.join(tmpdir(), "portpilot-mcp-"));
-  const cfgFile = path.join(cfgDir, "mcp.json");
-  process.env.PORTPILOT_MCP_CONFIG = cfgFile;
-  writeFileSync(cfgFile, JSON.stringify({
+  // 17. MCP runtime config: write a config disabling some tools and
+  //     verify tools/list drops them and tools/call returns isError.
+  fs.writeFileSync(cfgFile, JSON.stringify({
     enabled: true,
     disabledTools: ["kill_pid", "kill_by_name", "get_system_info"],
     version: "1.1.0",
@@ -209,7 +211,6 @@ async function main() {
       throw new Error(`tools/list should hide disabled tool ${name}, but it's present`);
     }
   }
-  // mcpState metadata is exposed via _portpilot (advisory)
   if (filtered._portpilot && Array.isArray(filtered._portpilot.blocked)) {
     if (!filtered._portpilot.blocked.includes("kill_pid")) {
       throw new Error("_portpilot.blocked missing kill_pid");
@@ -228,7 +229,7 @@ async function main() {
   process.stderr.write(`[smoke] disabled tool call rejected with isError\n`);
 
   // 19. Master switch off — list returns 0 tools, calls all denied
-  writeFileSync(cfgFile, JSON.stringify({ enabled: false, disabledTools: [], version: "1.1.0" }, null, 2));
+  fs.writeFileSync(cfgFile, JSON.stringify({ enabled: false, disabledTools: [], version: "1.1.0" }, null, 2));
   const off = await send("tools/list", {});
   if (off.tools.length !== 0) throw new Error("Expected 0 tools when MCP disabled globally");
   const denied2 = await send("tools/call", { name: "check_port", arguments: { port: 49151 } });
@@ -236,7 +237,8 @@ async function main() {
   process.stderr.write(`[smoke] MCP disabled globally: 0 tools + all calls rejected\n`);
 
   // Restore default config for the rest of the suite.
-  delete process.env.PORTPILOT_MCP_CONFIG;
+  fs.writeFileSync(cfgFile, JSON.stringify({ enabled: true, disabledTools: [], version: "1.1.0" }, null, 2));
+  try { fs.rmSync(cfgDir, { recursive: true, force: true }); } catch { /* best-effort */ }
 
   process.stderr.write("[smoke] OK\n");
   server.kill();

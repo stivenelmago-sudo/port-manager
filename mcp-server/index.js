@@ -359,10 +359,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
-// Extra resource: live config snapshot.
-server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-  const { uri } = request.params;
-
 // Expose a small set of static resources so clients can read extension metadata.
 server.setRequestHandler(ListResourcesRequestSchema, async () => {
   return {
