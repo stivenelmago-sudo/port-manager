@@ -14,6 +14,8 @@
   "config.mcp.enabled.description": "PortPilot MCP सर्वर सक्षम करें",
   "config.mcp.disabledTools.description": "अक्षम करने के लिए MCP टूल नामों की सूची",
   "mcp.providerLabel": "PortPilot",
+  "config.mcp.enabled.description": "PortPilot MCP सर्वर के लिए मास्टर स्विच। बंद होने पर क्लाइंट (VS Code, Cursor, Copilot आदि) को कोई टूल नहीं दिखाया जाता।",
+  "config.mcp.disabledTools.description": "क्लाइंट्स से छिपाने के लिए MCP टूल नामों की सूची। व्यक्तिगत टूल्स टॉगल करने के लिए साइडबार के \"Tools\" टैब का उपयोग करें।",
   "setLanguage.prompt": "भाषा चुनें",
   "setLanguage.current": "वर्तमान",
   "setLanguage.changed": "भाषा: {0} (विंडो पुनः लोड करें)"

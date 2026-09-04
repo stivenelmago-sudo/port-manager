@@ -14,6 +14,8 @@
   "config.mcp.enabled.description": "Enable the PortPilot MCP server",
   "config.mcp.disabledTools.description": "List of MCP tool names to disable",
   "mcp.providerLabel": "PortPilot",
+  "config.mcp.enabled.description": "Master switch for the PortPilot MCP server. When off, no tools are exposed to clients (VS Code, Cursor, Copilot, etc.).",
+  "config.mcp.disabledTools.description": "Array of MCP tool names to hide from clients. Use the sidebar \"Tools\" tab to toggle individual tools.",
   "setLanguage.prompt": "Select language",
   "setLanguage.current": "current",
   "setLanguage.changed": "Language: {0} (reload window)"

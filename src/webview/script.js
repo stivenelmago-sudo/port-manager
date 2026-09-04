@@ -273,6 +273,9 @@ module.exports = function getScript(strings = {}) {
         confirmingKill = null;
         render();
         break;
+      case "mcpState":
+        renderMcpPanel(msg);
+        break;
     }
   });
 
@@ -300,8 +303,10 @@ module.exports = function getScript(strings = {}) {
     });
     const containersPanel = document.getElementById("containersPanel");
     const locksPanel = document.getElementById("locksPanel");
+    const mcpPanel = document.getElementById("mcpPanel");
     if (containersPanel) containersPanel.style.display = tab === "containers" ? "block" : "none";
     if (locksPanel) locksPanel.style.display = tab === "locks" ? "block" : "none";
+    if (mcpPanel) mcpPanel.style.display = tab === "mcp" ? "block" : "none";
     elements.bulkKillBtn().style.display = "none";
 
     // Reset sort per tab
@@ -325,6 +330,8 @@ module.exports = function getScript(strings = {}) {
     } else if (tab === "locks") {
       vscode.postMessage({ command: "refreshLocks" });
       renderLocks();
+    } else if (tab === "mcp") {
+      vscode.postMessage({ command: "mcpList" });
     }
   }
 
@@ -1430,5 +1437,83 @@ module.exports = function getScript(strings = {}) {
 
   vscode.postMessage({ command: "refresh" });
   scheduleNextRefresh(0);
+
+  // ─── MCP tools panel ─────────────────────────────────────────────
+  function renderMcpPanel(state) {
+    const enabled = !!state.enabled;
+    const disabled = new Set(state.disabledTools || []);
+
+    const master = document.getElementById("mcpEnabledToggle");
+    const stateEl = document.getElementById("mcpMasterState");
+    if (master) master.checked = enabled;
+    if (stateEl) {
+      stateEl.textContent = enabled ? T.mcpStatusRunning : T.mcpStatusStopped;
+      stateEl.classList.toggle("mcp-state-on", enabled);
+      stateEl.classList.toggle("mcp-state-off", !enabled);
+    }
+    const verEl = document.getElementById("mcpVersionValue");
+    if (verEl) verEl.textContent = state.version || "—";
+    const pathEl = document.getElementById("mcpConfigPathValue");
+    if (pathEl) pathEl.textContent = state.configPath || "—";
+
+    const tbody = document.getElementById("mcpTbody");
+    const empty = document.getElementById("mcpEmpty");
+    if (!tbody) return;
+    const tools = state.tools || [];
+    if (tools.length === 0) {
+      tbody.innerHTML = "";
+      if (empty) empty.style.display = "block";
+      return;
+    }
+    if (empty) empty.style.display = "none";
+
+    const categoryLabel = (c) => c === "write" ? T.mcpCategoryWrite : c === "system" ? T.mcpCategorySystem : T.mcpCategoryRead;
+    const isOn = (t) => enabled && !disabled.has(t.name);
+
+    tbody.innerHTML = tools.map((t) => {
+      const on = isOn(t);
+      const flagged = t.destructive ? '<span class="mcp-flag mcp-flag-destructive" title="' + escapeHtml(T.mcpDestructiveFlag) + '">⚠</span>' : "";
+      return (
+        '<tr class="mcp-row' + (on ? '' : ' mcp-row-off') + '">' +
+          '<td><label class="mcp-switch"><input type="checkbox" ' + (on ? 'checked' : '') +
+            ' onchange="mcpToggleTool(\\'' + t.name + '\\', this.checked)"' +
+            (enabled ? '' : ' disabled') + '><span class="mcp-slider"></span></label></td>' +
+          '<td><code class="mcp-tool-name">' + escapeHtml(t.name) + '</code></td>' +
+          '<td><span class="mcp-cat mcp-cat-' + t.category + '">' + escapeHtml(categoryLabel(t.category)) + '</span></td>' +
+          '<td>' + flagged + '</td>' +
+        '</tr>'
+      );
+    }).join("");
+  }
+
+  // Exposed to inline handlers in the rendered HTML.
+  window.mcpToggleEnabled = function (enabled) {
+    vscode.postMessage({ command: "mcpToggleEnabled", enabled });
+  };
+  window.mcpToggleTool = function (tool, enabled) {
+    vscode.postMessage({ command: "mcpToggleTool", tool, enabled });
+  };
+  document.getElementById("mcpSelectAllBtn")?.addEventListener("click", () => {
+    const tbody = document.getElementById("mcpTbody");
+    if (!tbody) return;
+    tbody.querySelectorAll("input[type=checkbox]").forEach((c) => {
+      if (!c.checked) {
+        c.checked = true;
+        const m = c.closest("tr").querySelector(".mcp-tool-name");
+        if (m) window.mcpToggleTool(m.textContent, true);
+      }
+    });
+  });
+  document.getElementById("mcpDeselectAllBtn")?.addEventListener("click", () => {
+    const tbody = document.getElementById("mcpTbody");
+    if (!tbody) return;
+    tbody.querySelectorAll("input[type=checkbox]").forEach((c) => {
+      if (c.checked) {
+        c.checked = false;
+        const m = c.closest("tr").querySelector(".mcp-tool-name");
+        if (m) window.mcpToggleTool(m.textContent, false);
+      }
+    });
+  });
 `;
 };

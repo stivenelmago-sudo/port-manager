@@ -14,6 +14,8 @@
   "config.mcp.enabled.description": "PortPilot MCP サーバーを有効にする",
   "config.mcp.disabledTools.description": "無効にする MCP ツール名のリスト",
   "mcp.providerLabel": "PortPilot",
+  "config.mcp.enabled.description": "PortPilot MCP サーバーのマスター スイッチ。オフにするとクライアント (VS Code、Cursor、Copilot など) にツールが公開されません。",
+  "config.mcp.disabledTools.description": "クライアントから非表示にする MCP ツール名の配列。個々のツールを切り替えるにはサイドバーの \"Tools\" タブを使用します。",
   "setLanguage.prompt": "言語を選択",
   "setLanguage.current": "現在",
   "setLanguage.changed": "言語: {0} (ウィンドウを再読み込み)"

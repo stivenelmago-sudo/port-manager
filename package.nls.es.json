@@ -14,6 +14,8 @@
   "config.mcp.enabled.description": "Habilitar el servidor MCP de PortPilot",
   "config.mcp.disabledTools.description": "Lista de nombres de herramientas MCP para deshabilitar",
   "mcp.providerLabel": "PortPilot",
+  "config.mcp.enabled.description": "Interruptor maestro para el servidor MCP de PortPilot. Cuando está apagado, no se exponen herramientas a los clientes (VS Code, Cursor, Copilot, etc.).",
+  "config.mcp.disabledTools.description": "Lista de nombres de herramientas MCP a ocultar de los clientes. Usa la pestaña \"Tools\" del panel lateral para activar/desactivar herramientas individuales.",
   "setLanguage.prompt": "Seleccionar idioma",
   "setLanguage.current": "actual",
   "setLanguage.changed": "Idioma: {0} (recargar ventana)"

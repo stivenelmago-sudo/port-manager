@@ -14,6 +14,8 @@
   "config.mcp.enabled.description": "تمكين خادم PortPilot MCP",
   "config.mcp.disabledTools.description": "قائمة أسماء أدوات MCP لتعطيلها",
   "mcp.providerLabel": "PortPilot",
+  "config.mcp.enabled.description": "المفتاح الرئيسي لخادم PortPilot MCP. عند إيقافه، لا يتم عرض أي أدوات للعملاء (VS Code, Cursor, Copilot, إلخ).",
+  "config.mcp.disabledTools.description": "قائمة بأسماء أدوات MCP لإخفائها عن العملاء. استخدم علامة التبويب \"Tools\" في الشريط الجانبي لتبديل الأدوات الفردية.",
   "setLanguage.prompt": "اختر اللغة",
   "setLanguage.current": "الحالي",
   "setLanguage.changed": "اللغة: {0} (أعد تحميل النافذة)"

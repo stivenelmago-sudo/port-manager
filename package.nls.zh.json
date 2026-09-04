@@ -14,6 +14,8 @@
   "config.mcp.enabled.description": "启用 PortPilot MCP 服务器",
   "config.mcp.disabledTools.description": "要禁用的 MCP 工具名称列表",
   "mcp.providerLabel": "PortPilot",
+  "config.mcp.enabled.description": "PortPilot MCP 服务器的总开关。关闭后不会向客户端 (VS Code、Cursor、Copilot 等) 暴露任何工具。",
+  "config.mcp.disabledTools.description": "对客户端隐藏的 MCP 工具名称列表。可使用侧边栏的 \"Tools\" 选项卡切换单个工具。",
   "setLanguage.prompt": "选择语言",
   "setLanguage.current": "当前",
   "setLanguage.changed": "语言: {0} (重新加载窗口)"

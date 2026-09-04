@@ -779,6 +779,94 @@ module.exports = function getStyles() {
     cursor: pointer;
   }
 
+  /* MCP tools panel */
+  .mcp-master {
+    background: var(--vscode-editor-background);
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin: 10px 12px 6px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .mcp-master-switch {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .mcp-master-label { font-size: 13px; }
+  .mcp-master-state {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 500;
+  }
+  .mcp-state-on { background: rgba(0, 200, 100, 0.15); color: #00c864; }
+  .mcp-state-off { background: rgba(220, 60, 60, 0.15); color: #dc3c3c; }
+  .mcp-master-meta {
+    display: grid;
+    grid-template-columns: auto 1fr auto 1fr;
+    gap: 4px 8px;
+    font-size: 11px;
+    opacity: 0.85;
+  }
+  .mcp-meta-label { opacity: 0.65; }
+  .mcp-meta-value {
+    font-family: var(--vscode-editor-font-family, monospace);
+    color: var(--vscode-textLink-foreground);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .mcp-master-actions { display: flex; gap: 6px; }
+  #mcpTable { margin: 0 12px; }
+  #mcpTable thead th { font-size: 11px; text-transform: uppercase; opacity: 0.65; }
+  #mcpTable tbody tr.mcp-row-off { opacity: 0.45; }
+  #mcpTable tbody tr.mcp-row-off .mcp-tool-name { text-decoration: line-through; }
+  .mcp-tool-name {
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 12px;
+  }
+  .mcp-cat {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .mcp-cat-read   { background: rgba(0, 150, 220, 0.18); color: #6cb6e8; }
+  .mcp-cat-write  { background: rgba(220, 140, 0, 0.18); color: #e8a96c; }
+  .mcp-cat-system { background: rgba(140, 140, 140, 0.18); color: #b8b8b8; }
+  .mcp-flag-destructive { color: #dc3c3c; font-size: 13px; }
+  /* iOS-style switch */
+  .mcp-switch { position: relative; display: inline-block; width: 34px; height: 18px; }
+  .mcp-switch input { opacity: 0; width: 0; height: 0; }
+  .mcp-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--vscode-input-background, #444);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+  }
+  .mcp-slider::before {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.15s ease;
+  }
+  .mcp-switch input:checked + .mcp-slider { background: #00c864; }
+  .mcp-switch input:checked + .mcp-slider::before { transform: translateX(16px); }
+  .mcp-switch input:disabled + .mcp-slider { opacity: 0.4; cursor: not-allowed; }
+
   /* Clickable PID / port buttons */
   .pid-btn {
     font-family: var(--vscode-editor-font-family, monospace);
