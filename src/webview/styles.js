@@ -808,11 +808,19 @@ module.exports = function getStyles() {
     max-width: 100% !important;
     width: auto !important;
   }
-  /* Allow body to scroll on MCP tab so long tool lists fit the sidebar
-     viewport. The 80px offset accounts for the logo header (~50px) and
-     tabs row (~30px) above the panel. */
-  body.tab-mcp { overflow: auto !important; }
+  /* MCP tab layout: the panel itself is the scroll container so it never
+     overflows the sidebar viewport, regardless of how many tools are
+     listed. Absolute positioning lets it fill the area below the logo +
+     tabs (~80px) without disturbing the body scroll on other tabs. */
+  body.tab-mcp { position: relative !important; }
   body.tab-mcp #mcpPanel {
+    position: absolute !important;
+    left: 0;
+    right: 0;
+    top: 80px;
+    bottom: 0;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
     padding-bottom: 24px;
   }
   #mcpPanel .mcp-master,
