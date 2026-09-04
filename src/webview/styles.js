@@ -46,7 +46,13 @@ module.exports = function getStyles() {
     z-index: 12;
   }
   .sidebar-logo-svg {
-    flex: 0 0 auto;
+    flex: 0 0 28px;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    max-width: 28px;
+    max-height: 28px;
     border-radius: 6px;
     box-shadow: 0 0 0 1px rgba(255,255,255,0.04);
   }
@@ -81,7 +87,7 @@ module.exports = function getStyles() {
     top: 0;
   }
   .tab {
-    padding: 8px 14px;
+    padding: 8px 12px;
     background: transparent;
     border: none;
     border-bottom: 2px solid transparent;
@@ -92,6 +98,8 @@ module.exports = function getStyles() {
     opacity: 1;
     font-weight: 500;
     transition: opacity 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
   .tab:hover { opacity: 1; }
   .tab-active {
@@ -769,6 +777,17 @@ module.exports = function getStyles() {
     background: var(--vscode-charts-yellow, #cca700);
     color: #1a1a1a;
   }
+
+  /* Hide chrome on MCP tab (CSS-driven, body class set by switchTab) */
+  body.tab-mcp #stats,
+  body.tab-mcp .toolbar,
+  body.tab-mcp #langDropdown,
+  body.tab-mcp #scanPanel,
+  body.tab-mcp #bulkKillBtn { display: none !important; }
+  body.tab-mcp .tab-refresh { display: none !important; }
+  body.tab-mcp #mainTable { display: none !important; }
+  #mcpPanel { box-sizing: border-box; }
+  #mcpPanel .mcp-master { min-height: 120px; }
 
   /* Locks toggle */
   .locks-toggle {

@@ -309,30 +309,22 @@ module.exports = function getScript(strings = {}) {
     if (mcpPanel) mcpPanel.style.display = tab === "mcp" ? "block" : "none";
 
     // The toolbar (search, refresh, range scan, language) and the stats row
-    // are only meaningful for port/process data; hide them on MCP tab so
-    // the panel can use the full width.
+    // are only meaningful for port/process data; hide them entirely on MCP
+    // tab so the panel can use the full width and the layout stays clean.
     const isMcpTab = tab === "mcp";
-    const toolbar = document.querySelector(".toolbar");
+    document.body.classList.toggle("tab-mcp", isMcpTab);
+    document.querySelectorAll(".toolbar").forEach((el) => { el.style.display = isMcpTab ? "none" : ""; });
     const langDropdown = document.getElementById("langDropdown");
-    const scanPanel = elements.scanPanel();
-    const bulkKillBtn = elements.bulkKillBtn();
-    const refreshBtn = toolbar && toolbar.querySelector(".btn");
-    const statsEl = document.getElementById("stats");
-    const emptyEl = document.getElementById("empty");
-    if (toolbar) {
-      toolbar.style.display = isMcpTab ? "none" : "";
-      // Auto-hide individual toolbar controls even when other tabs reuse them
-      if (refreshBtn && refreshBtn.textContent && refreshBtn.textContent.indexOf(T.refresh) !== -1) {
-        refreshBtn.style.display = isMcpTab ? "none" : "";
-      }
-    }
     if (langDropdown) langDropdown.style.display = isMcpTab ? "none" : "";
+    const scanPanel = elements.scanPanel();
     if (scanPanel) scanPanel.style.display = "none";
+    const bulkKillBtn = elements.bulkKillBtn();
     if (bulkKillBtn) bulkKillBtn.style.display = "none";
+    const statsEl = document.getElementById("stats");
     if (statsEl) statsEl.style.display = isMcpTab ? "none" : "";
+    const emptyEl = document.getElementById("empty");
     if (emptyEl) emptyEl.style.display = "none";
     try { elements.search().value = ""; } catch { /* not yet bound */ }
-    elements.bulkKillBtn().style.display = "none";
 
     // Reset sort per tab
     if (tab === "ports") currentSort = { col: "port", dir: "asc" };
