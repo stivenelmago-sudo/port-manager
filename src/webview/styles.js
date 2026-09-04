@@ -786,8 +786,43 @@ module.exports = function getStyles() {
   body.tab-mcp #bulkKillBtn { display: none !important; }
   body.tab-mcp .tab-refresh { display: none !important; }
   body.tab-mcp #mainTable { display: none !important; }
-  #mcpPanel { box-sizing: border-box; }
-  #mcpPanel .mcp-master { min-height: 120px; }
+
+  /* Defensive geometry: cap sizes so MCP panel can never grow into an oval
+     shape regardless of host stylesheet, zoom level, or hover-preview
+     extensions that may try to scale the webview content. */
+  * { box-sizing: border-box; }
+  html, body { overflow: hidden; max-width: 100%; }
+  #mcpPanel,
+  #mcpPanel .mcp-master,
+  #mcpPanel .mcp-section,
+  #mcpPanel .mcp-master-row,
+  #mcpPanel .mcp-master-info,
+  #mcpPanel .mcp-master-title,
+  #mcpPanel .mcp-meta-row,
+  #mcpPanel .mcp-tool-list,
+  #mcpPanel .mcp-tool-row,
+  #mcpPanel .mcp-section-header {
+    position: static !important;
+    transform: none !important;
+    aspect-ratio: auto !important;
+    max-width: 100% !important;
+    width: auto !important;
+  }
+  #mcpPanel .mcp-master,
+  #mcpPanel .mcp-section {
+    width: 100% !important;
+    border-radius: 8px !important;
+  }
+  #mcpPanel .mcp-master {
+    padding: 12px;
+    margin: 12px;
+    border: 1px solid var(--vscode-panel-border, #333);
+  }
+  #mcpPanel .mcp-section-count,
+  #mcpPanel .mcp-master-state {
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
 
   /* Locks toggle */
   .locks-toggle {
@@ -801,13 +836,14 @@ module.exports = function getStyles() {
   /* MCP tools panel */
   .mcp-master {
     background: var(--vscode-editor-background);
-    border: 1px solid var(--vscode-panel-border);
+    border: 2px solid var(--vscode-panel-border);
     border-radius: 8px;
     padding: 12px;
     margin: 10px 12px 8px 12px;
     display: flex;
     flex-direction: column;
     gap: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   }
   .mcp-master-row {
     display: flex;

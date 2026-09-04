@@ -285,7 +285,11 @@ module.exports = function getScript(strings = {}) {
   });
 
   function switchTab(tab) {
-    if (tab === currentTab) return;
+    // Skip the no-op work only when switching to the same non-MCP tab.
+    // MCP must always re-fetch state so the tool list refreshes -- otherwise
+    // a missed mcpState reply leaves the panel stuck at 0/0 forever.
+    const sameTab = tab === currentTab;
+    if (sameTab && tab !== "mcp") return;
     currentTab = tab;
     selected = new Set();
     confirmingKill = null;
@@ -1454,6 +1458,10 @@ module.exports = function getScript(strings = {}) {
 
   vscode.postMessage({ command: "refresh" });
   scheduleNextRefresh(0);
+
+  // Always fetch MCP state on init so the Tools panel has its tool rows
+  // populated immediately, even if the user never clicks the tab.
+  vscode.postMessage({ command: "mcpList" });
 
   // ─── MCP tools panel ─────────────────────────────────────────────
   function renderMcpPanel(state) {

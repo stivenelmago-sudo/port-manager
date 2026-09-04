@@ -228,7 +228,7 @@ function getMcpPanel(s) {
 <div id="mcpPanel" style="display:none">
   <div class="mcp-master">
     <div class="mcp-master-row">
-      <label class="mcp-master-switch">
+      <label class="mcp-switch mcp-master-switch">
         <input type="checkbox" id="mcpEnabledToggle" onchange="mcpToggleEnabled(this.checked)">
         <span class="mcp-slider"></span>
       </label>
