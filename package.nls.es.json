@@ -10,6 +10,8 @@
   "config.language.description": "Anula el idioma de la interfaz (auto = seguir el idioma de VS Code)",
   "config.witr.enabled.description": "Activar el enriquecimiento de ancestros de proceso con WITR (binario incluido)",
   "config.witr.binaryPath.description": "Ruta al binario de witr (vacío = usar el incluido)",
+  "config.mcp.autoconfig.description": "Registrar automáticamente el servidor MCP de PortPilot en VS Code y otros clientes al activar",
+  "mcp.providerLabel": "PortPilot",
   "setLanguage.prompt": "Seleccionar idioma",
   "setLanguage.current": "actual",
   "setLanguage.changed": "Idioma: {0} (recargar ventana)"

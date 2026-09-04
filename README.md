@@ -83,8 +83,86 @@ The extension automatically follows your VS Code display language. To override, 
 
 ## Requirements
 
-- VS Code 1.80.0 or later
-- No additional dependencies
+- VS Code 1.101.0 or later (for MCP auto-discovery via `lm.registerMcpServerDefinitionProvider`)
+- No additional dependencies for the extension itself; the MCP server brings `@modelcontextprotocol/sdk` automatically
+
+## MCP Server (for AI clients)
+
+PortPilot also ships as an [MCP](https://modelcontextprotocol.io) server, so any MCP-compatible client (Claude Code, Kilo, Cursor, Continue, etc.) can query and manage listening ports directly.
+
+### Automatic setup on install
+
+The extension auto-configures the MCP server so you don't have to edit any config file:
+
+- **VS Code 1.101+** — when the extension activates it calls
+  `vscode.lm.registerMcpServerDefinitionProvider` and VS Code auto-discovers
+  the server and surfaces its tools in chat / agent mode. Declared via
+  `contributes.mcpServerDefinitionProviders` in `package.json`.
+- **`npm install` (development)** — the `postinstall` script:
+  1. Downloads the WITR ancestry binary for your host into
+     `resources/bin/` (if missing).
+  2. Writes a `portpilot` entry into every well-known client config file
+     it can find (`~/.config/Code/User/mcp.json`, `~/.config/kilo/mcp.json`,
+     `~/.kilo/mcp.json`, `~/.claude.json`,
+     `~/Library/Application Support/Claude/claude_desktop_config.json` on
+     macOS, `%APPDATA%\Claude\claude_desktop_config.json` on Windows, etc.).
+  All writes are **idempotent** — re-running never overwrites an existing
+  entry.
+- **Skip auto-config** any time with:
+  ```bash
+  PORTPILOT_SKIP_AUTOCONFIG=1 npm install
+  # or
+  npm install --ignore-scripts
+  ```
+  You can also disable the on-activation step from settings:
+  `portManager.mcp.autoconfig: false`.
+
+### Run it manually
+
+```bash
+npm run mcp          # stdio transport
+# or after `npm link`:
+portpilot-mcp
+```
+
+### Manual registration (if you skipped auto-config)
+
+```jsonc
+// kilo.json / .mcp.json / claude_desktop_config.json
+{
+  "mcpServers": {
+    "portpilot": {
+      "command": "node",
+      "args": ["/absolute/path/to/port-manager/mcp-server/index.js"]
+    }
+  }
+}
+```
+
+The auto-configured entry uses the same shape (absolute paths so it works
+regardless of cwd). On Windows 11 the `.zip` extraction in
+`scripts/postinstall.js` / `src/mcp/downloadWitr.js` relies on the built-in
+`tar` (libarchive-backed since Windows 10 1803+) with a PowerShell
+`Expand-Archive` fallback, so it works without any extra tooling.
+
+### Tools exposed
+
+| Tool | Purpose |
+| --- | --- |
+| `list_listening_ports` | List all TCP listening sockets (with optional WITR ancestry) |
+| `check_port` | Is a given port free? |
+| `find_ports_by_process` | Filter listening ports by process name |
+| `get_port_info` | Detailed info for a single port (pid, process, ancestry) |
+| `kill_port` | Graceful kill of the process owning a port (requires `confirm: true`) |
+| `kill_pid` | Graceful kill by PID (requires `confirm: true`) |
+| `witr_availability` | Whether the WITR binary is available on this host |
+
+### Resources exposed
+
+- `portpilot://manifest` — extension name, version, commands, configuration keys
+- `portpilot://witr` — current WITR availability + resolved binary path
+
+Destructive tools (`kill_port`, `kill_pid`) require an explicit `confirm: true` and will refuse otherwise. The server reuses the same `portService` and `witr` modules the VS Code sidebar uses, so behaviour stays in lock-step.
 
 ## Release Notes
 

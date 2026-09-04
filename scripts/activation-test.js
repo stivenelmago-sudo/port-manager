@@ -59,7 +59,10 @@ console.log("=== EXTENSION ACTIVATION TEST ===\n");
 
 // Load and activate
 const ext = require("../src/extension.js");
-const fakeContext = { subscriptions: [] };
+const fakeContext = {
+  subscriptions: [],
+  extensionPath: path.resolve(__dirname, ".."),
+};
 ext.activate(fakeContext);
 
 console.log("✓ Extension activated without throwing");

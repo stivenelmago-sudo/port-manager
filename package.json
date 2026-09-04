@@ -24,7 +24,7 @@
   },
   "homepage": "https://github.com/cristopher-dev/port-manager#readme",
   "engines": {
-    "vscode": "^1.80.0"
+    "vscode": "^1.101.0"
   },
   "categories": [
     "Other"
@@ -76,9 +76,20 @@
           "type": "string",
           "default": "",
           "description": "%config.witr.binaryPath.description%"
+        },
+        "portManager.mcp.autoconfig": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.mcp.autoconfig.description%"
         }
       }
     },
+    "mcpServerDefinitionProviders": [
+      {
+        "id": "portpilot.mcp-servers",
+        "label": "%mcp.providerLabel%"
+      }
+    ],
     "commands": [
       {
         "command": "portManager.show",
@@ -150,16 +161,24 @@
     ]
   },
   "devDependencies": {
-    "@vscode/vsce": "^2.22.0",
-    "@types/vscode": "^1.80.0"
+    "@types/vscode": "^1.80.0",
+    "@vscode/vsce": "^2.22.0"
   },
   "scripts": {
-    "lint": "node --check src/extension.js && for f in $(find src -name '*.js' -type f); do node --check \"$f\"; done",
+    "lint": "node --check src/extension.js && for f in $(find src -name '*.js' -type f); do node --check \"$f\"; done && for f in $(find mcp-server -name '*.js' -type f); do node --check \"$f\"; done",
     "validate": "node scripts/validate.js",
-    "test": "node scripts/smoke-test.js && node scripts/activation-test.js && node scripts/nls-resolution-test.js && node scripts/witr-smoke-test.js && node scripts/witr-functional-test.js && node scripts/containers-locks-test.js",
+    "test": "node scripts/smoke-test.js && node scripts/activation-test.js && node scripts/nls-resolution-test.js && node scripts/witr-smoke-test.js && node scripts/witr-functional-test.js && node scripts/containers-locks-test.js && node scripts/mcp-smoke-test.js && node scripts/autoconfig-test.js",
+    "postinstall": "node scripts/postinstall.js",
     "manual-install": "node scripts/manual-install-test.js",
     "build": "npm run lint && npm run validate && npm test && vsce package --no-dependencies",
     "package": "vsce package",
-    "publish": "vsce publish"
+    "publish": "vsce publish",
+    "mcp": "node mcp-server/index.js"
+  },
+  "bin": {
+    "portpilot-mcp": "mcp-server/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0"
   }
 }

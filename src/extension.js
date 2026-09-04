@@ -9,6 +9,7 @@ const vscode = require("vscode");
 const { createWebviewProvider } = require("./providers/webviewProvider");
 const { registerCommands } = require("./commands");
 const i18n = require("./i18n");
+const mcpProvider = require("./mcp/vscodeProvider");
 
 /**
  * Extension activation
@@ -16,6 +17,11 @@ const i18n = require("./i18n");
  */
 function activate(context) {
   i18n.init();
+
+  // Register the MCP server with VS Code so its tools are auto-discovered
+  // (1.101+). Also writes a portpilot entry into any known client config
+  // files (Kilo, Claude Code, Claude Desktop) on a best-effort basis.
+  mcpProvider.register(context);
 
   // Register sidebar webview provider
   const provider = createWebviewProvider(context);
