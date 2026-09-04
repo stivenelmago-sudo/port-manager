@@ -808,19 +808,16 @@ module.exports = function getStyles() {
     max-width: 100% !important;
     width: auto !important;
   }
-  /* MCP tab layout: the panel itself is the scroll container so it never
-     overflows the sidebar viewport, regardless of how many tools are
-     listed. Absolute positioning lets it fill the area below the logo +
-     tabs (~80px) without disturbing the body scroll on other tabs. */
-  body.tab-mcp { position: relative !important; }
+  /* MCP tab: the panel can be tall (16+ tool rows), so constrain body
+     to viewport height and enable scrolling. Other tabs continue to
+     clip with overflow:hidden, matching their existing behaviour. */
+  body.tab-mcp {
+    overflow: auto !important;
+    height: 100vh !important;
+    scrollbar-color: var(--vscode-scrollbarSlider-background, #555) var(--vscode-scrollbar-background, transparent) !important;
+  }
   body.tab-mcp #mcpPanel {
-    position: absolute !important;
-    left: 0;
-    right: 0;
-    top: 80px;
-    bottom: 0;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
+    display: block;
     padding-bottom: 24px;
   }
   #mcpPanel .mcp-master,

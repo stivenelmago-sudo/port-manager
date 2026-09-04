@@ -212,6 +212,7 @@ module.exports = function getScript(strings = {}) {
     detailsPanel: () => document.getElementById("detailsPanel"),
     detailsBody: () => document.getElementById("detailsBody"),
     mainTable: () => document.getElementById("mainTable"),
+    scanPanel: () => document.getElementById("scanPanel"),
   };
 
   // ─── Message handler ─────────────────────────────────────────────
