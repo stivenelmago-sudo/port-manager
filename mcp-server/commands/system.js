@@ -317,7 +317,7 @@ async function killByName({ name, confirm, signal = "SIGTERM", self_protect = tr
       failed.push({ pid: t.pid, comm: t.comm || t.imageName, error: e.message });
     }
   }
-  return { count: killed.length, failed: failed.length, killed, failed, query: name, safety_cap: KILL_SAFETY_CAP };
+  return { count: killed.length, failedCount: failed.length, killed, failed, query: name, safety_cap: KILL_SAFETY_CAP };
 }
 
 // ---------------------------------------------------------------------------

@@ -20,28 +20,23 @@ const autoConfig = require("./autoConfig");
 const PROVIDER_ID = "portpilot.mcp-servers";
 
 /**
- * Resolve the absolute path to mcp-server/index.js, preferring the path
- * inside this extension's installation directory. Falls back to a sibling
- * location for dev / link installs.
+ * Resolve the absolute path to the MCP server entry script.
+ *
+ * Delegates to `autoConfig.resolveMcpEntry`, which prefers the bundled
+ * file (`index.bundled.js`) so packaged VSIX installs work, and falls
+ * back to the dev `index.js` for link / source installs.
+ *
+ * @param {string} extensionPath
+ * @returns {string}
  */
 function resolveMcpEntry(extensionPath) {
-  const fs = require("fs");
   const base = extensionPath || path.resolve(__dirname, "..", "..");
-  const candidates = [
-    path.join(base, "mcp-server", "index.js"),
-    path.join(base, "..", "mcp-server", "index.js"),
-  ];
-  for (const c of candidates) {
-    try {
-      fs.accessSync(c);
-      return c;
-    } catch {
-      // try next
-    }
-  }
-  // Best-effort: return the first candidate even if missing — the error
-  // will surface in the editor as a clear "failed to start" message.
-  return candidates[0];
+  // Try the standard install location first, then a sibling layout used
+  // by some dev workflows.
+  const resolved =
+    autoConfig.resolveMcpEntry(base) ||
+    autoConfig.resolveMcpEntry(path.resolve(base, ".."));
+  return resolved || path.join(base, "mcp-server", "index.bundled.js");
 }
 
 /**

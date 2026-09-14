@@ -14,6 +14,7 @@
  */
 
 const path = require("path");
+const fs = require("fs");
 
 function shouldSkip() {
   if (process.env.PORTPILOT_SKIP_AUTOCONFIG === "1" || process.env.PORTPILOT_SKIP_AUTOCONFIG === "true") {
@@ -66,7 +67,14 @@ async function main() {
   }
 
   // 2. MCP registration
-  const mcpEntry = path.join(repoRoot, "mcp-server", "index.js");
+  // Prefer the bundled entry so installed (non-dev) copies still work
+  // when node_modules is not present.
+  const mcpEntry = autoConfig.resolveMcpEntry(repoRoot) ||
+    path.join(repoRoot, "mcp-server", "index.js");
+  if (!fs.existsSync(mcpEntry)) {
+    log(`mcp: skipped (no entry script at ${mcpEntry})`);
+    return;
+  }
   try {
     const results = autoConfig.autoConfigure({
       mcpEntry,

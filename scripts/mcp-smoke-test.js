@@ -16,7 +16,17 @@ const cfgDir = fs.mkdtempSync(path.join(os.tmpdir(), "portpilot-mcp-"));
 const cfgFile = path.join(cfgDir, "mcp.json");
 fs.writeFileSync(cfgFile, JSON.stringify({ enabled: true, disabledTools: [], version: "1.1.0" }, null, 2));
 
-const server = spawn(process.execPath, [path.join(__dirname, "..", "mcp-server", "index.js")], {
+// Prefer the bundled entry so this matches what the VSIX ships; fall back
+// to the dev source for unbundled checkouts.
+const mcpEntry = ["index.bundled.js", "index.js"]
+  .map((f) => path.join(__dirname, "..", "mcp-server", f))
+  .find((p) => fs.existsSync(p));
+if (!mcpEntry) {
+  process.stderr.write("[smoke] no MCP entry available; run `npm run bundle:mcp` first\n");
+  process.exit(2);
+}
+
+const server = spawn(process.execPath, [mcpEntry], {
   stdio: ["pipe", "pipe", "inherit"],
   env: { ...process.env, PORTPILOT_MCP_CONFIG: cfgFile },
 });

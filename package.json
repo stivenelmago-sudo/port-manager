@@ -89,7 +89,9 @@
         },
         "portManager.mcp.disabledTools": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "default": [],
           "description": "%config.mcp.disabledTools.description%"
         }
@@ -173,21 +175,23 @@
   },
   "devDependencies": {
     "@types/vscode": "^1.80.0",
-    "@vscode/vsce": "^2.22.0"
+    "@vscode/vsce": "^2.22.0",
+    "esbuild": "^0.25.12"
   },
   "scripts": {
-    "lint": "node --check src/extension.js && for f in $(find src -name '*.js' -type f); do node --check \"$f\"; done && for f in $(find mcp-server -name '*.js' -type f); do node --check \"$f\"; done",
+    "lint": "node --check src/extension.js && for f in $(find src -name '*.js' -type f); do node --check \"$f\"; done && for f in $(find mcp-server -name '*.js' -type f -not -name '*.bundled.js'); do node --check \"$f\"; done",
     "validate": "node scripts/validate.js",
     "test": "node scripts/smoke-test.js && node scripts/activation-test.js && node scripts/nls-resolution-test.js && node scripts/witr-smoke-test.js && node scripts/witr-functional-test.js && node scripts/containers-locks-test.js && node scripts/mcp-smoke-test.js && node scripts/autoconfig-test.js",
     "postinstall": "node scripts/postinstall.js",
     "manual-install": "node scripts/manual-install-test.js",
-    "build": "npm run lint && npm run validate && npm test && vsce package --no-dependencies",
-    "package": "vsce package",
+    "bundle:mcp": "node scripts/bundle-mcp.js",
+    "build": "npm run lint && npm run validate && npm test && npm run bundle:mcp && vsce package --no-dependencies",
+    "package": "npm run bundle:mcp && vsce package --no-dependencies",
     "publish": "vsce publish",
-    "mcp": "node mcp-server/index.js"
+    "mcp": "node mcp-server/index.bundled.js"
   },
   "bin": {
-    "portpilot-mcp": "mcp-server/index.js"
+    "portpilot-mcp": "mcp-server/index.bundled.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0"

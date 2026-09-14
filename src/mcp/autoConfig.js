@@ -51,6 +51,30 @@ function buildServerEntry(mcpEntry, nodeBin) {
 }
 
 /**
+ * Resolve the MCP server entry script.
+ *
+ * Prefers the bundled file (`mcp-server/index.bundled.js`) when present so
+ * packaged VSIX installs (no `node_modules`) work. Falls back to
+ * `mcp-server/index.js` for dev installs where the SDK is available via
+ * `require()`.
+ *
+ * @param {string} baseDir absolute path to the repo root or extension dir
+ * @returns {string|null} absolute path to the entry script, or null if neither exists
+ */
+function resolveMcpEntry(baseDir) {
+  const candidates = [
+    path.join(baseDir, "mcp-server", "index.bundled.js"),
+    path.join(baseDir, "mcp-server", "index.js"),
+  ];
+  for (const c of candidates) {
+    try {
+      if (fs.existsSync(c)) return c;
+    } catch { /* ignore */ }
+  }
+  return null;
+}
+
+/**
  * Read JSON from a file, returning an empty object on missing/parse error.
  * Caller decides whether the file should exist.
  */
@@ -464,6 +488,7 @@ module.exports = {
   syncMcpConfig,
   readMcpConfig,
   buildServerEntry,
+  resolveMcpEntry,
   autoConfigure,
   ensureWitrBinary,
   candidateFiles,

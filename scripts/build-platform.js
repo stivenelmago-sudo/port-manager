@@ -71,7 +71,12 @@ for (const f of fs.readdirSync(binDir)) {
 }
 console.log(`Removed ${removed} non-matching binaries`);
 
-// 3. Package.
+// 3. Bundle the MCP server (and its SDK dependency) into a single
+//    self-contained file so the VSIX doesn't need node_modules.
+console.log("\nBundling MCP server...");
+execSync(`node "${path.join(__dirname, "bundle-mcp.js")}"`, { stdio: "inherit" });
+
+// 4. Package.
 console.log(`\nRunning: vsce package --target ${vsceTarget}`);
 execSync(`npx vsce package --target ${vsceTarget} --no-dependencies`, {
   stdio: "inherit",
